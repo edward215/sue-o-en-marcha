@@ -1,0 +1,1071 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sueño en Marcha</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: panel de trabajo. Temporizador a la izquierda, misiones a la derecha; racha y tips debajo. */
+:root {
+  --bg: #EDF1F6;
+  --surface: #FFFFFF;
+  --surface-2: #E1E8F0;
+  --fg: #1B2433;
+  --muted: #566277;
+  --line: #CBD4E0;
+  --accent: #276FA5;
+  --accent-fg: #FFFFFF;
+  --accent-soft: #E3F0FA;
+  --ok: #23794A;
+  --alert: #B8470F;
+  --alert-soft: #FBE6DA;
+  --ring: var(--accent);
+  --font-head: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141A24; --surface: #1D2533; --surface-2: #273144; --fg: #E7ECF4; --muted: #9AA7BC;
+    --line: #334057; --accent: #5FA8E0; --accent-fg: #0E1722; --accent-soft: #1F3550;
+    --ok: #4CC083; --alert: #F08A5B; --alert-soft: #3F2518;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141A24; --surface: #1D2533; --surface-2: #273144; --fg: #E7ECF4; --muted: #9AA7BC;
+  --line: #334057; --accent: #5FA8E0; --accent-fg: #0E1722; --accent-soft: #1F3550;
+  --ok: #4CC083; --alert: #F08A5B; --alert-soft: #3F2518;
+  color-scheme: dark;
+}
+
+/* Colores de la interfaz. El azul original no lleva atributo; los demás cambian el tono (--h) y la intensidad (--s). */
+:root[data-accent="verde"] { --h: 150; --s: 55%; }
+:root[data-accent="turquesa"] { --h: 182; --s: 70%; }
+:root[data-accent="violeta"] { --h: 268; --s: 52%; }
+:root[data-accent="rosa"] { --h: 328; --s: 58%; }
+:root[data-accent="rojo"] { --h: 355; --s: 62%; }
+:root[data-accent="ambar"] { --h: 36; --s: 85%; }
+:root[data-accent="grafito"] { --h: 215; --s: 8%; }
+:root[data-accent] {
+  --accent: hsl(var(--h) var(--s) 36%);
+  --accent-fg: #FFFFFF;
+  --accent-soft: hsl(var(--h) calc(var(--s) + 10%) 92%);
+  --bg: hsl(var(--h) calc(var(--s) * 0.45) 95%);
+  --surface-2: hsl(var(--h) calc(var(--s) * 0.4) 90%);
+  --line: hsl(var(--h) calc(var(--s) * 0.3) 82%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent] {
+    --accent: hsl(var(--h) calc(var(--s) + 12%) 66%);
+    --accent-fg: #0E1722;
+    --accent-soft: hsl(var(--h) calc(var(--s) * 0.7) 22%);
+    --bg: hsl(var(--h) calc(var(--s) * 0.4) 11%);
+    --surface: hsl(var(--h) calc(var(--s) * 0.35) 15%);
+    --surface-2: hsl(var(--h) calc(var(--s) * 0.3) 20%);
+    --line: hsl(var(--h) calc(var(--s) * 0.3) 27%);
+  }
+}
+:root[data-theme="dark"][data-accent] {
+  --accent: hsl(var(--h) calc(var(--s) + 12%) 66%);
+  --accent-fg: #0E1722;
+  --accent-soft: hsl(var(--h) calc(var(--s) * 0.7) 22%);
+  --bg: hsl(var(--h) calc(var(--s) * 0.4) 11%);
+  --surface: hsl(var(--h) calc(var(--s) * 0.35) 15%);
+  --surface-2: hsl(var(--h) calc(var(--s) * 0.3) 20%);
+  --line: hsl(var(--h) calc(var(--s) * 0.3) 27%);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 var(--font-body);
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 20px; }
+
+h1 { font: 700 clamp(30px, 6vw, 42px)/1.05 var(--font-head); letter-spacing: -0.02em; margin: 0; }
+h2 { font: 700 18px/1.2 var(--font-head); letter-spacing: -0.01em; margin: 0; }
+p { margin: 0; }
+
+.top { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-end; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { width: 44px; height: 44px; flex: none; }
+.lg-bg { fill: var(--accent); }
+.lg-fg { fill: var(--accent-fg); }
+.sub { color: var(--muted); margin-top: 8px; max-width: 46ch; }
+.stats { display: flex; gap: 22px; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; }
+.stat-n { font: 700 22px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.stat-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 5px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .grid, .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; min-width: 0; }
+.card-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+
+/* Controls */
+.btn {
+  font: 600 14px/1 var(--font-body); min-height: 44px; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.small { min-height: 36px; padding: 8px 12px; font-size: 13px; }
+.btn.wide { width: 100%; margin-top: 8px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[type="text"], select {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px;
+}
+input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+
+/* Timer */
+.seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); }
+.seg-b { font: 600 14px/1 var(--font-body); padding: 10px 16px; min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; }
+.seg-b[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.seg-b:disabled { opacity: 0.55; cursor: not-allowed; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chip { font: 500 13px/1 var(--font-mono); padding: 9px 12px; min-height: 36px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+[data-mode="break"] { --ring: var(--ok); }
+.dial { position: relative; width: min(100%, 260px); aspect-ratio: 1; margin: 18px auto 8px; }
+.dial svg { width: 100%; height: 100%; display: block; }
+.trk { fill: none; stroke: var(--surface-2); stroke-width: 10; }
+.prg { fill: none; stroke: var(--ring); stroke-width: 10; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.25s linear; }
+.dial-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.time { font: 700 clamp(40px, 12vw, 56px)/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.state { font-size: 13px; color: var(--muted); text-align: center; max-width: 18ch; }
+.now { text-align: center; color: var(--muted); margin-top: 8px; min-height: 1.5em; overflow-wrap: anywhere; }
+.now b { color: var(--fg); font-weight: 600; }
+.btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 14px; }
+.notice { margin-top: 12px; padding: 12px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.notice.nag { background: var(--alert-soft); border: 1px solid var(--alert); }
+.notice.micro { background: var(--accent-soft); border: 1px solid var(--accent); justify-content: flex-start; }
+.alarms { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.alarms summary { cursor: pointer; font: 600 12px/1.4 var(--font-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0 0; }
+.row select { padding: 6px 8px; }
+
+/* Tasks */
+.count { font: 500 13px var(--font-mono); color: var(--muted); }
+.bar { height: 6px; border-radius: 99px; background: var(--surface-2); margin: 12px 0 14px; overflow: hidden; }
+.bar-f { height: 100%; width: 0; background: var(--ok); transition: width 0.3s; }
+.add { display: flex; gap: 8px; }
+.add input { flex: 1; min-width: 0; min-height: 44px; }
+.list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.task { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.task.current { background: var(--accent-soft); border-color: var(--accent); }
+.task.done .t-text { text-decoration: line-through; color: var(--muted); }
+.t-text { overflow-wrap: anywhere; }
+.t-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.t-meta:empty { display: none; }
+.tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; background: var(--surface-2); color: var(--muted); }
+.tag.on { background: var(--accent); color: var(--accent-fg); }
+.t-act { display: flex; gap: 6px; align-items: center; }
+.x { width: 36px; padding: 0; font-size: 18px; line-height: 1; }
+@media (max-width: 480px) { .task { grid-template-columns: auto minmax(0, 1fr); } .t-act { grid-column: 2; } }
+.tfoot { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-top: 14px; }
+.hint { font-size: 13px; color: var(--muted); max-width: 40ch; }
+.empty { color: var(--muted); padding: 8px 0; }
+
+/* Streak and tips */
+.strip { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 4px; margin: 16px 0 10px; }
+.day { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.dot { width: 100%; max-width: 28px; aspect-ratio: 1; border-radius: 6px; background: var(--surface-2); }
+.day.on .dot { background: var(--ok); }
+.day.today .dot { outline: 2px solid var(--fg); outline-offset: 1px; }
+.streak-t { color: var(--muted); }
+.cat { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; }
+.tip-now { font: 500 20px/1.35 var(--font-head); margin: 10px 0 14px; text-wrap: balance; }
+.tips-all { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+@media (max-width: 700px) { .tips-all { grid-template-columns: minmax(0, 1fr); } }
+.tips-all li { padding: 12px 0; border-top: 1px solid var(--line); }
+.tips-all b { display: block; margin: 2px 0; }
+.tips-all span { color: var(--muted); }
+
+.goal { margin-top: 18px; }
+.goal-h { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.goal .bar { margin: 8px 0 10px; }
+.goal-b { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.steps { margin: 16px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--muted); }
+
+.tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+.themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px; }
+.sw { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
+.sw:hover { transform: scale(1.08); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+
+/* Tutorial */
+.tour-hi { position: fixed; z-index: 40; pointer-events: none; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(10, 14, 22, 0.62), 0 0 0 3px var(--accent); }
+.tour-hi.none { box-shadow: 0 0 0 9999px rgba(10, 14, 22, 0.62); }
+.tour { position: fixed; z-index: 45; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); margin: 0 auto; max-width: 460px; max-height: 60vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35); display: grid; gap: 10px; }
+.tour-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tour-n { font: 500 13px var(--font-mono); color: var(--muted); }
+.tour h2 { font-size: 20px; }
+.tour-b { display: grid; gap: 8px; }
+.tour-b p { color: var(--fg); }
+.tour-try { padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--accent); font-weight: 500; }
+.tour-try.ok { border-color: var(--ok); color: var(--ok); }
+.tour-nav { display: flex; justify-content: space-between; gap: 8px; }
+body.touring { padding-bottom: 360px; }
+
+/* Alarm overlay */
+.overlay {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(10, 14, 22, 0.62);
+  padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.al-card { background: var(--surface); border: 2px solid var(--alert); border-radius: 16px; padding: 24px; width: 100%; max-width: 440px; }
+.al-card h2 { font-size: 28px; color: var(--alert); }
+.al-card p { margin-top: 8px; }
+.al-btns { display: grid; gap: 8px; margin-top: 18px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+          <defs><mask id="lgMoon"><rect width="48" height="48" fill="#fff"/><circle cx="31" cy="19" r="11" fill="#000"/></mask></defs>
+          <rect class="lg-bg" width="48" height="48" rx="12"/>
+          <circle class="lg-fg" cx="23" cy="26" r="13" mask="url(#lgMoon)"/>
+          <path class="lg-fg" d="M34 7l1.7 4.8 4.8 1.7-4.8 1.7L34 20l-1.7-4.8-4.8-1.7 4.8-1.7z"/>
+        </svg>
+        <h1>Sueño en Marcha</h1>
+      </div>
+      <p class="sub">Una tarea pequeña a la vez. Tus sueños se construyen por sesiones.</p>
+    </div>
+    <div class="stats" id="statsBox" aria-label="Resumen de hoy">
+      <div class="stat"><span class="stat-n" id="stStreak">0</span><span class="stat-l">días de racha</span></div>
+      <div class="stat"><span class="stat-n" id="stMin">0</span><span class="stat-l">min hoy</span></div>
+      <div class="stat"><span class="stat-n" id="stRounds">0</span><span class="stat-l">rondas hoy</span></div>
+    </div>
+    <div class="tools">
+      <div class="themes" id="tThemes" role="group" aria-label="Color de la interfaz"></div>
+      <button type="button" class="btn" id="btnTour">Tutorial</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card" id="timerCard" data-mode="focus" aria-labelledby="hTimer">
+      <h2 class="sr-only" id="hTimer">Temporizador</h2>
+      <div id="tSetup">
+        <div class="seg" role="group" aria-label="Tipo de sesión">
+          <button type="button" class="seg-b" id="modeFocus" aria-pressed="true">Enfoque</button>
+          <button type="button" class="seg-b" id="modeBreak" aria-pressed="false">Descanso</button>
+        </div>
+        <div class="chips" id="chips" role="group" aria-label="Duración en minutos"></div>
+      </div>
+
+      <div class="dial" id="tDial">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="trk" cx="100" cy="100" r="88"></circle>
+          <circle class="prg" id="prg" cx="100" cy="100" r="88"></circle>
+        </svg>
+        <div class="dial-in">
+          <div class="time" id="time" role="timer">25:00</div>
+          <div class="state" id="state" aria-live="polite">Listo para empezar</div>
+        </div>
+      </div>
+      <p class="now" id="now"></p>
+
+      <div class="notice nag" id="nag" role="status" hidden>
+        <span id="nagTxt"></span>
+        <button type="button" class="btn small primary" id="nagGo">Retomar</button>
+      </div>
+
+      <div class="btns" id="tBtns">
+        <button type="button" class="btn primary" id="btnMain">Empezar</button>
+        <button type="button" class="btn" id="btnReset">Reiniciar</button>
+      </div>
+      <button type="button" class="btn ghost wide" id="btnStuck">Estoy bloqueado: solo 5 minutos</button>
+      <div class="notice micro" id="micro" hidden><span id="microTxt"></span></div>
+
+      <details class="alarms" id="tAlarms" open>
+        <summary>Alarmas</summary>
+        <label class="row"><input type="checkbox" id="optSound" checked> Sonar al terminar cada sesión</label>
+        <label class="row"><input type="checkbox" id="optNag" checked> Avisarme si dejo el enfoque en pausa más de
+          <select id="optNagMin" aria-label="Minutos en pausa antes del aviso">
+            <option value="1">1 min</option>
+            <option value="2">2 min</option>
+            <option value="5">5 min</option>
+          </select>
+        </label>
+        <div class="row"><button type="button" class="btn small" id="btnTest">Probar sonido</button></div>
+      </details>
+    </section>
+
+    <section class="card" id="tTasks" aria-labelledby="hTasks">
+      <div class="card-h"><h2 id="hTasks">Misiones de hoy</h2><span class="count" id="taskCount">0 de 0</span></div>
+      <div class="bar" aria-hidden="true"><div class="bar-f" id="barF"></div></div>
+      <form class="add" id="taskForm">
+        <label class="sr-only" for="taskIn">Nueva tarea</label>
+        <input type="text" id="taskIn" maxlength="120" autocomplete="off" placeholder="La tarea más pequeña posible. Ej: abrir Godot">
+        <button type="submit" class="btn primary">Añadir</button>
+      </form>
+      <ul class="list" id="list"></ul>
+      <div class="tfoot">
+        <button type="button" class="btn small" id="btnClear">Quitar las hechas</button>
+        <p class="hint">Si una tarea da pereza, pártela hasta que sea ridícula de pequeña. Todo se guarda en este navegador.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="grid">
+    <section class="card" id="tDev" aria-labelledby="hDev">
+      <h2 id="hDev">Ciclo de video</h2>
+      <p class="hint" style="max-width:none;margin-top:8px">Un video cada 2 semanas es una meta sostenible. Añade los pasos fijos a tu lista y ve tachándolos.</p>
+      <form class="add" id="devForm" style="margin-top:14px">
+        <label class="sr-only" for="devName">Nombre del video</label>
+        <input type="text" id="devName" maxlength="60" autocomplete="off" placeholder="Nombre del video (opcional)">
+        <button type="submit" class="btn primary">Añadir pasos</button>
+      </form>
+      <ol class="steps" id="devSteps"></ol>
+    </section>
+    <section class="card" id="tWeek" aria-labelledby="hWeek">
+      <div class="card-h"><h2 id="hWeek">Metas de la semana</h2><span class="count">lun a dom</span></div>
+      <div class="goal">
+        <div class="goal-h"><span>Rondas de enfoque</span><span class="count" id="wkRounds"></span></div>
+        <div class="bar"><div class="bar-f" id="wkRoundsBar"></div></div>
+        <div class="goal-b">
+          <button type="button" class="btn small x" data-act="r-" aria-label="Bajar la meta de rondas">−</button>
+          <button type="button" class="btn small x" data-act="r+" aria-label="Subir la meta de rondas">+</button>
+          <span class="hint">Ajusta la meta</span>
+        </div>
+      </div>
+      <div class="goal">
+        <div class="goal-h"><span>Videos publicados</span><span class="count" id="wkVideos"></span></div>
+        <div class="bar"><div class="bar-f" id="wkVideosBar"></div></div>
+        <div class="goal-b">
+          <button type="button" class="btn small x" data-act="v-" aria-label="Bajar la meta de videos">−</button>
+          <button type="button" class="btn small x" data-act="v+" aria-label="Subir la meta de videos">+</button>
+          <button type="button" class="btn small" data-act="pub">Publiqué un video</button>
+          <button type="button" class="btn small ghost" data-act="unpub">Deshacer</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="card" id="tStreak" aria-labelledby="hStreak">
+      <h2 id="hStreak">Racha</h2>
+      <div class="strip" id="strip" aria-label="Últimos 14 días"></div>
+      <p class="streak-t" id="streakT"></p>
+    </section>
+    <section class="card" id="tTip" aria-labelledby="hTip">
+      <div class="card-h"><h2 id="hTip">Tip del momento</h2><button type="button" class="btn small" id="btnTip">Otro tip</button></div>
+      <p class="cat" id="tipCat" style="margin-top:14px"></p>
+      <p class="tip-now" id="tipNow"></p>
+      <p class="hint">Cambia solo cada 45 segundos.</p>
+    </section>
+  </div>
+
+</div>
+
+<div class="tour-hi none" id="tourHi" hidden></div>
+<section class="tour" id="tour" role="region" aria-label="Tutorial" hidden>
+  <div class="tour-top"><span class="tour-n" id="tourN"></span><button type="button" class="btn small ghost" id="tourX">Salir</button></div>
+  <h2 id="tourT"></h2>
+  <div class="tour-b" id="tourB"></div>
+  <p class="tour-try" id="tourTry" hidden></p>
+  <div class="tour-nav"><button type="button" class="btn small" id="tourPrev">Atrás</button><button type="button" class="btn small primary" id="tourNext">Siguiente</button></div>
+</section>
+
+<div class="overlay" id="alarm" role="alertdialog" aria-modal="true" aria-labelledby="alTitle" aria-describedby="alText" hidden>
+  <div class="al-card">
+    <h2 id="alTitle"></h2>
+    <p id="alText"></p>
+    <div class="al-btns" id="alBtns"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'arranque-v1';
+  var C = 2 * Math.PI * 88;
+  var FOCUS = [5, 10, 20, 25, 45, 60];
+  var BREAK = [5, 10, 15];
+  var DAYS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+
+  var TIPS = [
+    { cat: 'Empezar', t: 'Hazlo ridículamente pequeño', d: 'No planees «hacer un juego». Planea abrir Godot y mover un cuadrado. Empezar es lo difícil; seguir sale solo.' },
+    { cat: 'Empezar', t: 'Regla de los 20 minutos', d: 'Trabaja solo 20 minutos. Si después quieres parar, para sin culpa. Casi siempre sigues.' },
+    { cat: 'Empezar', t: 'No esperes a tener ganas', d: 'La motivación llega después de empezar, no antes. Actúa primero y las ganas se suman.' },
+    { cat: 'Mantener el ritmo', t: 'Mejor poco, pero cada día', d: 'Una hora diaria a la misma hora vale más que un fin de semana entero de vez en cuando.' },
+    { cat: 'Mantener el ritmo', t: 'Deja anotado el siguiente paso', d: 'Al terminar, escribe qué harás mañana. Así no empiezas desde cero ni decides en frío.' },
+    { cat: 'Mantener el ritmo', t: 'No rompas la cadena', d: 'Marca cada día que trabajes. Ver crecer la racha pesa más de lo que parece.' },
+    { cat: 'Mantener el ritmo', t: 'Recompensa después, no antes', d: 'Redes, series y juegos van después de la sesión, como premio.' },
+    { cat: 'Entorno', t: 'Elimina la fricción', d: 'Deja Godot y tu proyecto abiertos y listos. Cuantos menos pasos para empezar, mejor.' },
+    { cat: 'Entorno', t: 'Celular lejos', d: 'Ponlo en no molestar y fuera de tu alcance durante la sesión. Bloquea redes si hace falta.' },
+    { cat: 'Entorno', t: 'Cuida lo básico', d: 'Dormir, comer y tomar agua. El cansancio suele disfrazarse de pereza.' },
+    { cat: 'Canal', t: 'Primero el juego, luego la cámara', d: 'Aprende con proyectos pequeños y graba lo que haces. No esperes a tener el canal perfecto.' },
+    { cat: 'Canal', t: 'Publica imperfecto', d: 'Tu primer video va a ser malo, y está bien. Un video cada 2 semanas es una meta sostenible.' }
+  ];
+
+  var MICRO = [
+    'Abre Godot. Solo abre el programa, nada más.',
+    'Crea una escena nueva y añade un nodo Sprite2D.',
+    'Escribe una sola línea de código, aunque sea print("hola").',
+    'Escribe en una frase qué vas a hacer en estos 5 minutos.',
+    'Cierra todo menos Godot y pon tu música de trabajo.',
+    'Abre el proyecto y mira dónde lo dejaste la última vez.'
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  /* ---------- Storage ---------- */
+  function defaults() {
+    return {
+      tasks: [
+        { id: uid(), text: 'Instalar Godot 4 y abrir un proyecto nuevo', done: false, rounds: 0, example: true },
+        { id: uid(), text: 'Seguir 20 minutos del tutorial oficial «Tu primer juego 2D»', done: false, rounds: 0, example: true },
+        { id: uid(), text: 'Hacer que un cuadrado se mueva con las flechas', done: false, rounds: 0, example: true }
+      ],
+      settings: { sound: true, nag: true, nagMin: 2, focusMin: 25, breakMin: 5 },
+      days: {},
+      current: null
+    };
+  }
+  var store = null;
+  try { var raw = localStorage.getItem(KEY); store = raw ? JSON.parse(raw) : null; } catch (e) { store = null; }
+  if (!store || !Array.isArray(store.tasks)) store = defaults();
+  store.settings = Object.assign(defaults().settings, store.settings || {});
+  store.days = store.days || {};
+  function weekStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  var wk = keyOf(weekStart(new Date()));
+  store.week = store.week || {};
+  if (store.week.key !== wk) store.week = { key: wk, videos: 0, targetRounds: store.week.targetRounds, targetVideos: store.week.targetVideos };
+  store.week.videos = store.week.videos || 0;
+  store.week.targetRounds = store.week.targetRounds || 10;
+  store.week.targetVideos = store.week.targetVideos || 1;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+  function dayOf(k) {
+    if (!store.days[k]) store.days[k] = { focusSec: 0, rounds: 0, done: 0 };
+    return store.days[k];
+  }
+
+  /* ---------- Audio ---------- */
+  var actx = null;
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (actx && actx.state === 'suspended') { try { actx.resume(); } catch (e) {} }
+    return actx;
+  }
+  function tone(freq, start, dur, vol, type, force) {
+    if (!force && !store.settings.sound) return;
+    var c = audio();
+    if (!c) return;
+    var t0 = c.currentTime + start;
+    var o = c.createOscillator();
+    var g = c.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    g.connect(c.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.05);
+  }
+  function alarmSound(force) {
+    [0, 0.28, 0.56].forEach(function (s) { tone(880, s, 0.2, 0.16, 'square', force); });
+    tone(1175, 0.9, 0.5, 0.16, 'square', force);
+  }
+  function nagSound() {
+    tone(523, 0, 0.25, 0.22, 'triangle');
+    tone(392, 0.32, 0.45, 0.22, 'triangle');
+  }
+  var alarmTimer = null;
+  function startAlarmSound() {
+    stopAlarmSound();
+    var n = 0;
+    function go() { alarmSound(); n++; if (n >= 15) stopAlarmSound(); }
+    go();
+    alarmTimer = setInterval(go, 2600);
+  }
+  function stopAlarmSound() { if (alarmTimer) { clearInterval(alarmTimer); alarmTimer = null; } }
+
+  /* ---------- Screen wake lock ---------- */
+  var wake = null;
+  function takeWake() {
+    try {
+      if ('wakeLock' in navigator && !wake) {
+        navigator.wakeLock.request('screen').then(function (w) {
+          wake = w;
+          w.addEventListener('release', function () { wake = null; });
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+  function releaseWake() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
+
+  /* ---------- Timer ---------- */
+  var T = { mode: 'focus', dur: 25 * 60, remaining: 25 * 60, status: 'idle', endAt: 0, pausedAt: 0, lastNag: 0 };
+
+  function prepare(mode, minutes) {
+    T.mode = mode;
+    var mins = minutes || (mode === 'focus' ? store.settings.focusMin : store.settings.breakMin);
+    T.dur = mins * 60;
+    T.remaining = T.dur;
+    T.status = 'idle';
+    if (!minutes) $('micro').hidden = true;
+    hideNag();
+    releaseWake();
+    renderAll();
+  }
+  function start() {
+    audio();
+    if (T.status === 'running') return;
+    if (T.remaining <= 0) T.remaining = T.dur;
+    T.endAt = Date.now() + T.remaining * 1000;
+    T.status = 'running';
+    hideNag();
+    takeWake();
+    renderAll();
+  }
+  function pause() {
+    if (T.status !== 'running') return;
+    T.remaining = Math.max(1, Math.ceil((T.endAt - Date.now()) / 1000));
+    T.status = 'paused';
+    T.pausedAt = Date.now();
+    T.lastNag = T.pausedAt;
+    releaseWake();
+    renderAll();
+  }
+  function complete() {
+    var wasFocus = T.mode === 'focus';
+    T.status = 'idle';
+    T.remaining = 0;
+    releaseWake();
+    hideNag();
+    if (wasFocus) {
+      var d = dayOf(keyOf(new Date()));
+      d.focusSec += T.dur;
+      d.rounds += 1;
+      for (var i = 0; i < store.tasks.length; i++) {
+        if (store.tasks[i].id === store.current) { store.tasks[i].rounds = (store.tasks[i].rounds || 0) + 1; }
+      }
+      save();
+    }
+    renderAll();
+    openAlarm(wasFocus);
+  }
+  function tick() {
+    var now = Date.now();
+    if (T.status === 'running') {
+      T.remaining = Math.max(0, Math.ceil((T.endAt - now) / 1000));
+      if (T.remaining <= 0) complete();
+    } else if (T.status === 'paused' && T.mode === 'focus' && store.settings.nag) {
+      var ms = store.settings.nagMin * 60000;
+      if (now - T.pausedAt >= ms && now - T.lastNag >= ms) {
+        T.lastNag = now;
+        nagSound();
+        showNag();
+      }
+    }
+    renderTimer();
+  }
+  function showNag() {
+    var mins = Math.max(1, Math.round((Date.now() - T.pausedAt) / 60000));
+    $('nagTxt').textContent = 'Llevas ' + mins + ' min en pausa. Retómalo: solo 5 minutos más y puedes parar.';
+    $('nag').hidden = false;
+  }
+  function hideNag() { $('nag').hidden = true; }
+
+  /* ---------- Alarm overlay ---------- */
+  function closeAlarm() {
+    stopAlarmSound();
+    $('alarm').hidden = true;
+    if (T.status === 'idle' && T.remaining <= 0) T.remaining = T.dur;
+    renderAll();
+  }
+  function openAlarm(wasFocus) {
+    $('alTitle').textContent = wasFocus ? 'Ronda terminada' : 'Descanso terminado';
+    $('alText').textContent = wasFocus
+      ? 'Buen trabajo. Levántate, toma agua y descansa la vista unos minutos.'
+      : 'Se acabó el descanso. Vuelve con una sola ronda más.';
+    var box = $('alBtns');
+    box.textContent = '';
+    function add(label, cls, fn) {
+      var b = el('button', 'btn ' + cls, label);
+      b.type = 'button';
+      b.addEventListener('click', function () { closeAlarm(); if (fn) fn(); });
+      box.appendChild(b);
+      return b;
+    }
+    var first;
+    if (wasFocus) {
+      first = add('Descansar ' + store.settings.breakMin + ' min', 'primary', function () { prepare('break'); start(); });
+      add('Otra ronda de enfoque', '', function () { prepare('focus'); start(); });
+    } else {
+      first = add('Empezar ronda de enfoque', 'primary', function () { prepare('focus'); start(); });
+    }
+    add('Solo silenciar', 'ghost', null);
+    $('alarm').hidden = false;
+    startAlarmSound();
+    first.focus();
+  }
+
+  /* ---------- Tasks ---------- */
+  function currentTask() {
+    for (var i = 0; i < store.tasks.length; i++) if (store.tasks[i].id === store.current) return store.tasks[i];
+    return null;
+  }
+  function work(t) {
+    store.current = t.id;
+    save();
+    if (T.mode !== 'focus') prepare('focus');
+    if (T.status !== 'running') start(); else renderAll();
+  }
+  function renderTasks() {
+    var ul = $('list');
+    ul.textContent = '';
+    if (!store.tasks.length) {
+      ul.appendChild(el('li', 'empty', 'No hay tareas. Escribe la más pequeña que se te ocurra y empieza por esa.'));
+    }
+    var sorted = store.tasks.filter(function (t) { return !t.done; }).concat(store.tasks.filter(function (t) { return t.done; }));
+    sorted.forEach(function (t) {
+      var li = el('li', 'task' + (t.done ? ' done' : '') + (t.id === store.current ? ' current' : ''));
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!t.done;
+      cb.setAttribute('aria-label', 'Marcar como hecha: ' + t.text);
+      cb.addEventListener('change', function () {
+        t.done = cb.checked;
+        var d = dayOf(keyOf(new Date()));
+        d.done = Math.max(0, d.done + (t.done ? 1 : -1));
+        if (t.done && store.current === t.id) store.current = null;
+        if (t.kind === 'publish') store.week.videos = Math.max(0, store.week.videos + (t.done ? 1 : -1));
+        save();
+        renderAll();
+      });
+      var mid = el('div');
+      mid.appendChild(el('div', 't-text', t.text));
+      var meta = el('div', 't-meta');
+      if (t.id === store.current && !t.done) meta.appendChild(el('span', 'tag on', 'en curso'));
+      if (t.rounds) meta.appendChild(el('span', 'tag', t.rounds + (t.rounds === 1 ? ' ronda' : ' rondas')));
+      if (t.example) meta.appendChild(el('span', 'tag', 'ejemplo'));
+      mid.appendChild(meta);
+      var act = el('div', 't-act');
+      if (!t.done) {
+        var go = el('button', 'btn small primary', 'Empezar');
+        go.type = 'button';
+        go.addEventListener('click', function () { work(t); });
+        act.appendChild(go);
+      }
+      var rm = el('button', 'btn small x', '×');
+      rm.type = 'button';
+      rm.setAttribute('aria-label', 'Quitar tarea: ' + t.text);
+      rm.addEventListener('click', function () {
+        store.tasks = store.tasks.filter(function (x) { return x.id !== t.id; });
+        if (store.current === t.id) store.current = null;
+        save();
+        renderAll();
+      });
+      act.appendChild(rm);
+      li.appendChild(cb);
+      li.appendChild(mid);
+      li.appendChild(act);
+      ul.appendChild(li);
+    });
+    var total = store.tasks.length;
+    var done = store.tasks.filter(function (t) { return t.done; }).length;
+    $('taskCount').textContent = done + ' de ' + total;
+    $('barF').style.width = (total ? (done / total) * 100 : 0) + '%';
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderTimer() {
+    var m = Math.floor(T.remaining / 60);
+    var s = T.remaining % 60;
+    $('time').textContent = pad(m) + ':' + pad(s);
+    var frac = T.dur > 0 ? T.remaining / T.dur : 1;
+    $('prg').style.strokeDasharray = String(C);
+    $('prg').style.strokeDashoffset = String(C * frac);
+    $('timerCard').dataset.mode = T.mode;
+    var run = T.status === 'running';
+    $('btnMain').textContent = run ? 'Pausar' : (T.status === 'paused' ? 'Retomar' : 'Empezar');
+    var label;
+    if (T.mode === 'focus') label = run ? 'En marcha. Solo esto.' : (T.status === 'paused' ? 'En pausa' : 'Listo para empezar');
+    else label = run ? 'Descansando' : (T.status === 'paused' ? 'Descanso en pausa' : 'Descanso listo');
+    $('state').textContent = label;
+    $('modeFocus').setAttribute('aria-pressed', String(T.mode === 'focus'));
+    $('modeBreak').setAttribute('aria-pressed', String(T.mode === 'break'));
+    $('modeFocus').disabled = run;
+    $('modeBreak').disabled = run;
+  }
+  function renderChips() {
+    var box = $('chips');
+    box.textContent = '';
+    var list = T.mode === 'focus' ? FOCUS : BREAK;
+    var cur = Math.round(T.dur / 60);
+    list.forEach(function (m) {
+      var b = el('button', 'chip', m + ' min');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(m === cur));
+      b.disabled = T.status === 'running';
+      b.addEventListener('click', function () {
+        store.settings[T.mode === 'focus' ? 'focusMin' : 'breakMin'] = m;
+        save();
+        prepare(T.mode);
+      });
+      box.appendChild(b);
+    });
+  }
+  function renderNow() {
+    var n = $('now');
+    n.textContent = '';
+    if (T.mode === 'break') { n.textContent = 'Descansa. Si puedes, lejos de la pantalla.'; return; }
+    var t = currentTask();
+    if (t) { n.appendChild(document.createTextNode('Ahora: ')); n.appendChild(el('b', null, t.text)); }
+    else n.textContent = 'Elige una tarea con «Empezar», o arranca sin tarea.';
+  }
+  function isActive(k) { var d = store.days[k]; return !!d && (d.rounds > 0 || d.done > 0); }
+  function streak() {
+    var n = 0;
+    var d = new Date();
+    if (!isActive(keyOf(d))) d.setDate(d.getDate() - 1);
+    while (isActive(keyOf(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function renderStats() {
+    var today = store.days[keyOf(new Date())] || { focusSec: 0, rounds: 0, done: 0 };
+    var st = streak();
+    $('stStreak').textContent = String(st);
+    $('stMin').textContent = String(Math.round(today.focusSec / 60));
+    $('stRounds').textContent = String(today.rounds);
+    var strip = $('strip');
+    strip.textContent = '';
+    for (var i = 13; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var cell = el('div', 'day' + (isActive(keyOf(d)) ? ' on' : '') + (i === 0 ? ' today' : ''));
+      cell.title = keyOf(d);
+      cell.appendChild(el('div', 'dot'));
+      cell.appendChild(el('span', null, DAYS[d.getDay()]));
+      strip.appendChild(cell);
+    }
+    $('streakT').textContent = st === 0
+      ? 'Hoy puede ser el día uno. Una sola ronda de enfoque o una tarea hecha cuenta.'
+      : st + (st === 1 ? ' día seguido. ' : ' días seguidos. ') + 'No rompas la cadena.';
+  }
+  function weekRounds() {
+    var s = weekStart(new Date()), n = 0;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(s);
+      d.setDate(s.getDate() + i);
+      var r = store.days[keyOf(d)];
+      if (r) n += r.rounds;
+    }
+    return n;
+  }
+  function renderWeek() {
+    var w = store.week, r = weekRounds();
+    $('wkRounds').textContent = r + ' / ' + w.targetRounds;
+    $('wkRoundsBar').style.width = Math.min(100, (r / w.targetRounds) * 100) + '%';
+    $('wkVideos').textContent = w.videos + ' / ' + w.targetVideos;
+    $('wkVideosBar').style.width = Math.min(100, (w.videos / w.targetVideos) * 100) + '%';
+  }
+  function renderAll() { renderTimer(); renderChips(); renderNow(); renderTasks(); renderStats(); renderWeek(); }
+
+  var tipIdx = Math.floor(Date.now() / 86400000) % TIPS.length;
+  function renderTip() {
+    var t = TIPS[tipIdx];
+    $('tipCat').textContent = t.cat;
+    $('tipNow').textContent = t.t + '. ' + t.d;
+  }
+  var tipTimer = null;
+  function nextTip() { tipIdx = (tipIdx + 1) % TIPS.length; renderTip(); }
+  function startTipTimer() {
+    if (tipTimer) clearInterval(tipTimer);
+    tipTimer = setInterval(nextTip, 45000);
+  }
+
+  var DEV_STEPS = [
+    { s: 'Elegir la idea y anotar 3 puntos a mostrar' },
+    { s: 'Grabar la pantalla mientras trabajas en Godot' },
+    { s: 'Editar: cortar silencios y errores grandes' },
+    { s: 'Título y miniatura' },
+    { s: 'Subir y publicar', kind: 'publish' }
+  ];
+  function renderDevSteps() {
+    var ol = $('devSteps');
+    DEV_STEPS.forEach(function (d) { ol.appendChild(el('li', null, d.s)); });
+  }
+
+  /* ---------- Events ---------- */
+  $('btnMain').addEventListener('click', function () { if (T.status === 'running') pause(); else start(); });
+  $('btnReset').addEventListener('click', function () { prepare(T.mode, T.dur / 60 === 5 && $('micro').hidden === false ? 5 : undefined); });
+  $('nagGo').addEventListener('click', function () { start(); });
+  $('modeFocus').addEventListener('click', function () { if (T.status !== 'running') prepare('focus'); });
+  $('modeBreak').addEventListener('click', function () { if (T.status !== 'running') prepare('break'); });
+  $('btnStuck').addEventListener('click', function () {
+    var a = MICRO[Math.floor(Math.random() * MICRO.length)];
+    prepare('focus', 5);
+    $('microTxt').textContent = 'Solo esto: ' + a;
+    $('micro').hidden = false;
+    start();
+  });
+  $('btnTest').addEventListener('click', function () { audio(); alarmSound(true); nagSound(); });
+  $('optSound').checked = !!store.settings.sound;
+  $('optNag').checked = !!store.settings.nag;
+  $('optNagMin').value = String(store.settings.nagMin);
+  $('optSound').addEventListener('change', function (e) { store.settings.sound = e.target.checked; save(); });
+  $('optNag').addEventListener('change', function (e) { store.settings.nag = e.target.checked; save(); });
+  $('optNagMin').addEventListener('change', function (e) { store.settings.nagMin = parseInt(e.target.value, 10) || 2; save(); });
+  $('taskForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('taskIn').value.trim();
+    if (!v) return;
+    store.tasks.push({ id: uid(), text: v, done: false, rounds: 0 });
+    $('taskIn').value = '';
+    save();
+    renderAll();
+  });
+  $('btnClear').addEventListener('click', function () {
+    store.tasks = store.tasks.filter(function (t) { return !t.done; });
+    save();
+    renderAll();
+  });
+  $('btnTip').addEventListener('click', function () { nextTip(); startTipTimer(); });
+  $('devForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('devName').value.trim();
+    DEV_STEPS.forEach(function (d) {
+      var task = { id: uid(), text: name ? 'Video «' + name + '»: ' + d.s : d.s, done: false, rounds: 0 };
+      if (d.kind) task.kind = d.kind;
+      store.tasks.push(task);
+    });
+    $('devName').value = '';
+    save();
+    renderAll();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-act]'), function (b) {
+    b.addEventListener('click', function () {
+      var w = store.week, a = b.getAttribute('data-act');
+      if (a === 'r-') w.targetRounds = Math.max(1, w.targetRounds - 1);
+      if (a === 'r+') w.targetRounds = Math.min(60, w.targetRounds + 1);
+      if (a === 'v-') w.targetVideos = Math.max(1, w.targetVideos - 1);
+      if (a === 'v+') w.targetVideos = Math.min(10, w.targetVideos + 1);
+      if (a === 'pub') w.videos += 1;
+      if (a === 'unpub') w.videos = Math.max(0, w.videos - 1);
+      save();
+      renderWeek();
+    });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('alarm').hidden) closeAlarm(); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') { if (T.status === 'running') takeWake(); tick(); }
+  });
+
+  /* ---------- Colores ---------- */
+  var THEMES = [
+    { id: 'azul', n: 'Azul', sw: '#276FA5' },
+    { id: 'verde', n: 'Verde', sw: 'hsl(150 55% 36%)' },
+    { id: 'turquesa', n: 'Turquesa', sw: 'hsl(182 70% 36%)' },
+    { id: 'violeta', n: 'Violeta', sw: 'hsl(268 52% 36%)' },
+    { id: 'rosa', n: 'Rosa', sw: 'hsl(328 58% 36%)' },
+    { id: 'rojo', n: 'Rojo', sw: 'hsl(355 62% 36%)' },
+    { id: 'ambar', n: 'Ámbar', sw: 'hsl(36 85% 36%)' },
+    { id: 'grafito', n: 'Grafito', sw: 'hsl(215 8% 36%)' }
+  ];
+  function applyTheme(id) {
+    var ok = THEMES.some(function (t) { return t.id === id; });
+    if (!ok) id = 'azul';
+    store.theme = id;
+    if (id === 'azul') document.documentElement.removeAttribute('data-accent');
+    else document.documentElement.setAttribute('data-accent', id);
+    Array.prototype.forEach.call($('tThemes').children, function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-id') === id));
+    });
+  }
+  function renderThemes() {
+    var box = $('tThemes');
+    THEMES.forEach(function (t) {
+      var b = el('button', 'sw');
+      b.type = 'button';
+      b.setAttribute('data-id', t.id);
+      b.setAttribute('aria-label', 'Color ' + t.n);
+      b.title = t.n;
+      b.style.background = t.sw;
+      b.addEventListener('click', function () { applyTheme(t.id); save(); });
+      box.appendChild(b);
+    });
+    applyTheme(store.theme);
+  }
+
+  /* ---------- Tutorial ---------- */
+  var STEPS = [
+    { t: 'Tutorial de Sueño en Marcha', b: ['Te voy a mostrar cada parte de la app, una por una.', 'Algunos pasos tienen un «Pruébalo»: haz clic en lo que se ilumina para verlo en acción.', 'Usa las flechas del teclado o los botones de abajo. Puedes salir cuando quieras.'] },
+    { id: 'statsBox', t: 'Tu resumen de hoy', b: ['Días de racha: días seguidos en los que completaste una ronda de enfoque o marcaste una tarea como hecha.', 'Min hoy: minutos de enfoque completados hoy. Solo cuentan las rondas que llegan hasta el final.', 'Rondas hoy: cuántos bloques de enfoque terminaste hoy.'] },
+    { id: 'tThemes', t: 'Color de la interfaz', b: ['Elige entre 8 colores. Cambian el acento, los botones y los fondos, y funcionan tanto en modo claro como oscuro.', 'Azul es el color original. Tu elección se guarda en este navegador.'], tr: { sel: '#tThemes .sw', ev: 'click', msg: 'Pruébalo: pulsa un color.' } },
+    { id: 'tSetup', t: 'Elige el tipo y la duración', b: ['Enfoque es para trabajar y Descanso es para parar. Los botones de abajo cambian la duración: 5, 10, 20, 25, 45 o 60 minutos en enfoque; 5, 10 o 15 en descanso.', 'Si hoy te cuesta arrancar, elige 5 o 10 minutos. Lo importante es empezar.', 'Al terminar el tutorial se restaura la duración que tenías antes.'], tr: { sel: '#chips .chip, #modeFocus, #modeBreak', ev: 'click', msg: 'Pruébalo: pulsa una duración o cambia entre Enfoque y Descanso.' } },
+    { id: 'tDial', t: 'El reloj', b: ['El número muestra el tiempo que queda y el aro se va vaciando a medida que avanza.', 'Debajo del número verás el estado: «Listo para empezar», «En marcha», «En pausa» o «Descansando».', 'El aro es azul en enfoque y verde en descanso. Debajo del reloj aparece la tarea en la que trabajas ahora.'] },
+    { id: 'tBtns', t: 'Empezar la ronda', b: ['«Empezar» arranca el temporizador. Mientras corre, el botón pasa a ser «Pausar». «Reiniciar» lo devuelve al tiempo inicial.', 'La pantalla se mantiene encendida mientras corre, si tu dispositivo lo permite.', 'Al llegar a cero suena una alarma que se repite hasta que la silencies, y te pregunta si quieres descansar o hacer otra ronda.'], tr: { sel: '#btnMain', ev: 'click', msg: 'Pruébalo: pulsa «Empezar» y mira cómo corre el reloj.' } },
+    { id: 'tBtns', t: 'Pausar y retomar', b: ['Pulsa «Pausar» para detenerlo sin perder el tiempo restante. Después el botón dice «Retomar».', 'Si dejas el enfoque en pausa demasiado tiempo, la app te avisa con un sonido y un mensaje para que vuelvas. Ese tiempo se configura en «Alarmas».'], tr: { sel: '#btnMain', ev: 'click', msg: 'Pruébalo: pulsa el botón principal otra vez.' } },
+    { id: 'btnStuck', t: 'Estoy bloqueado', b: ['Es para los días en que no te puedes ni sentar. Inicia una ronda de solo 5 minutos con una micro-acción concreta, por ejemplo «abre Godot, solo eso».', 'Si completas los 5 minutos, cuenta como una ronda normal. No hace falta probarlo ahora.'] },
+    { id: 'tAlarms', t: 'Alarmas', b: ['Sonar al terminar: activa o desactiva el sonido de fin de ronda.', 'Avisarme si dejo el enfoque en pausa: elige si el aviso llega tras 1, 2 o 5 minutos.', '«Probar sonido» comprueba el volumen. Los navegadores solo dejan sonar audio después de que interactúas con la página.'], tr: { sel: '#btnTest', ev: 'click', msg: 'Pruébalo: pulsa «Probar sonido».' } },
+    { id: 'tTasks', t: 'Misiones de hoy', b: ['Escribe la tarea más pequeña posible y pulsa «Añadir».', '«Empezar» en una tarea la vincula al temporizador y arranca una ronda; esa tarea cuenta sus rondas.', 'La casilla la marca como hecha y la barra de arriba muestra tu avance. La × la quita, y «Quitar las hechas» limpia las completadas. Las tareas marcadas «ejemplo» puedes borrarlas.'], tr: { sel: '#taskForm', ev: 'submit', msg: 'Pruébalo: escribe una tarea y pulsa «Añadir». Se queda en tu lista; puedes quitarla con la ×.' } },
+    { id: 'tDev', t: 'Ciclo de video', b: ['Escribe el nombre de tu video (opcional) y pulsa «Añadir pasos»: se agregan 5 tareas a tu lista: idea, grabar, editar, título y miniatura, y subir.', 'Al marcar «Subir y publicar» como hecha, la app suma un video a tus metas de la semana.', 'No lo pruebes ahora si no quieres llenar la lista.'] },
+    { id: 'tWeek', t: 'Metas de la semana', b: ['La semana va de lunes a domingo y se reinicia sola.', 'Rondas de enfoque: suma las rondas completadas esta semana. Los botones − y + ajustan tu meta.', 'Videos publicados: suben cuando marcas «Subir y publicar» o con «Publiqué un video». «Deshacer» resta uno.'] },
+    { id: 'tStreak', t: 'Racha', b: ['Cada cuadro es un día de los últimos 14. Verde significa que ese día completaste una ronda o una tarea. Hoy tiene un borde.', 'La idea es no romper la cadena: con una sola ronda corta ya cuenta.'] },
+    { id: 'tTip', t: 'Tips del momento', b: ['Muestra un consejo contra la procrastinación y cambia solo cada 45 segundos.', '«Otro tip» salta al siguiente y reinicia el contador.'], tr: { sel: '#btnTip', ev: 'click', msg: 'Pruébalo: pulsa «Otro tip».' } },
+    { t: 'Listo', b: ['Un buen primer paso: elige 5 o 10 minutos, añade una tarea pequeña y pulsa Empezar.', 'Puedes repetir este tutorial cuando quieras con el botón «Tutorial» de arriba.'] }
+  ];
+  var tour = { on: false, i: 0, done: {}, wasIdle: true, fm: 25, bm: 5 };
+  function stepEl(s) { return s.id ? $(s.id) : null; }
+  function placeHi() {
+    if (!tour.on) return;
+    var t = stepEl(STEPS[tour.i]);
+    var hi = $('tourHi');
+    if (t) {
+      var r = t.getBoundingClientRect();
+      var p = 6;
+      hi.style.left = (r.left - p) + 'px';
+      hi.style.top = (r.top - p) + 'px';
+      hi.style.width = (r.width + p * 2) + 'px';
+      hi.style.height = (r.height + p * 2) + 'px';
+    } else {
+      hi.style.left = '50%';
+      hi.style.top = '30%';
+      hi.style.width = '0px';
+      hi.style.height = '0px';
+    }
+  }
+  function focusTarget() {
+    if (!tour.on) return;
+    var t = stepEl(STEPS[tour.i]);
+    if (t) {
+      var r = t.getBoundingClientRect();
+      var avail = window.innerHeight - $('tour').offsetHeight - 24;
+      var top = r.height < avail ? Math.max(12, (avail - r.height) / 2 + 12) : 12;
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollBy({ top: r.top - top, behavior: reduce ? 'auto' : 'smooth' });
+    }
+    placeHi();
+  }
+  function updateTry() {
+    var s = STEPS[tour.i];
+    var tr = $('tourTry');
+    if (!s.tr) { tr.hidden = true; return; }
+    tr.hidden = false;
+    tr.className = 'tour-try' + (tour.done[tour.i] ? ' ok' : '');
+    tr.textContent = tour.done[tour.i] ? '✓ ¡Hecho! Ya lo probaste.' : s.tr.msg;
+  }
+  function renderTour() {
+    var s = STEPS[tour.i];
+    $('tourN').textContent = (tour.i + 1) + ' / ' + STEPS.length;
+    $('tourT').textContent = s.t;
+    var b = $('tourB');
+    b.textContent = '';
+    s.b.forEach(function (x) { b.appendChild(el('p', null, x)); });
+    updateTry();
+    $('tourPrev').disabled = tour.i === 0;
+    $('tourNext').textContent = tour.i === STEPS.length - 1 ? 'Terminar' : 'Siguiente';
+    $('tourHi').className = 'tour-hi' + (stepEl(s) ? '' : ' none');
+    $('tour').scrollTop = 0;
+    setTimeout(focusTarget, 30);
+  }
+  function tourGo(n) {
+    if (n < 0) return;
+    if (n >= STEPS.length) { tourEnd(); return; }
+    tour.i = n;
+    renderTour();
+  }
+  function tourStart() {
+    tour.on = true;
+    tour.i = 0;
+    tour.done = {};
+    tour.wasIdle = T.status === 'idle';
+    tour.fm = store.settings.focusMin;
+    tour.bm = store.settings.breakMin;
+    $('tour').hidden = false;
+    $('tourHi').hidden = false;
+    document.body.classList.add('touring');
+    renderTour();
+    $('tourNext').focus();
+  }
+  function tourEnd() {
+    tour.on = false;
+    $('tour').hidden = true;
+    $('tourHi').hidden = true;
+    document.body.classList.remove('touring');
+    if (tour.wasIdle) {
+      store.settings.focusMin = tour.fm;
+      store.settings.breakMin = tour.bm;
+      prepare('focus');
+    }
+    store.tour = true;
+    save();
+    $('btnTour').classList.remove('primary');
+    window.scrollTo({ top: 0 });
+  }
+  function tourWatch(e) {
+    if (!tour.on) return;
+    var s = STEPS[tour.i];
+    if (!s.tr || tour.done[tour.i] || e.type !== s.tr.ev) return;
+    if (e.target.closest && e.target.closest(s.tr.sel)) {
+      var idx = tour.i;
+      setTimeout(function () {
+        if (tour.on && tour.i === idx) { tour.done[idx] = true; updateTry(); }
+      }, 0);
+    }
+  }
+  document.addEventListener('click', tourWatch, true);
+  document.addEventListener('submit', tourWatch, true);
+  window.addEventListener('scroll', function () { if (tour.on) requestAnimationFrame(placeHi); }, { passive: true });
+  window.addEventListener('resize', function () { if (tour.on) requestAnimationFrame(placeHi); });
+  $('btnTour').addEventListener('click', tourStart);
+  $('tourNext').addEventListener('click', function () { tourGo(tour.i + 1); });
+  $('tourPrev').addEventListener('click', function () { tourGo(tour.i - 1); });
+  $('tourX').addEventListener('click', tourEnd);
+  document.addEventListener('keydown', function (e) {
+    if (!tour.on || !$('alarm').hidden) return;
+    var tag = e.target && e.target.tagName;
+    if (e.key === 'Escape') { tourEnd(); return; }
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight') tourGo(tour.i + 1);
+    if (e.key === 'ArrowLeft') tourGo(tour.i - 1);
+  });
+  if (!store.tour) $('btnTour').classList.add('primary');
+
+  /* ---------- Start ---------- */
+  renderThemes();
+  prepare('focus');
+  renderTip();
+  renderDevSteps();
+  startTipTimer();
+  try {
+    var blob = new Blob(['setInterval(function(){postMessage(1)},250)'], { type: 'text/javascript' });
+    var w = new Worker(URL.createObjectURL(blob));
+    w.onmessage = tick;
+    w.onerror = function () { w.terminate(); setInterval(tick, 250); };
+  } catch (e) {
+    setInterval(tick, 250);
+  }
+})();
+</script>
+
+</body></html>

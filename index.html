@@ -785,7 +785,7 @@ body.touring { padding-bottom: 360px; }
     $('time').textContent = pad(m) + ':' + pad(s);
     var frac = T.dur > 0 ? T.remaining / T.dur : 1;
     $('prg').style.strokeDasharray = String(C);
-    $('prg').style.strokeDashoffset = String(C * frac);
+    $('prg').style.strokeDashoffset = String(C * (1 - frac));
     $('timerCard').dataset.mode = T.mode;
     var run = T.status === 'running';
     $('btnMain').textContent = run ? 'Pausar' : (T.status === 'paused' ? 'Retomar' : 'Empezar');
