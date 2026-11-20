@@ -171,10 +171,6 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .alarms summary { cursor: pointer; font: 600 12px/1.4 var(--font-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 12px 0 0; }
 .row select { padding: 6px 8px; }
-.ntfy { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 4px; }
-.ntfy input[type="text"] { flex: 1; min-width: 0; min-height: 36px; }
-.ntfy .hint { margin-top: 10px; max-width: none; }
-.ntfy label.row { flex-wrap: nowrap; align-items: flex-start; }
 
 /* Tasks */
 .count { font: 500 13px var(--font-mono); color: var(--muted); }
@@ -219,6 +215,14 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .goal-b { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .steps { margin: 16px 0 0; padding-left: 22px; display: grid; gap: 6px; color: var(--muted); }
 
+.cyc { text-align: center; font: 500 12px var(--font-mono); color: var(--muted); margin-top: 4px; min-height: 1.4em; }
+.opt { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.opt input { margin-top: 2px; }
+.grow { flex: 1 1 160px; min-width: 0; }
+.al-next { display: grid; gap: 6px; margin-top: 16px; }
+.al-next label { font-size: 13px; color: var(--muted); }
+.al-next input { min-height: 44px; width: 100%; }
+textarea { font: 12px/1.4 var(--font-mono); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; resize: vertical; }
 .tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
 .themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px; }
 .sw { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
@@ -301,6 +305,7 @@ body.touring { padding-bottom: 360px; }
         </div>
       </div>
       <p class="now" id="now"></p>
+      <p class="cyc" id="cyc"></p>
 
       <div class="notice nag" id="nag" role="status" hidden>
         <span id="nagTxt"></span>
@@ -313,11 +318,12 @@ body.touring { padding-bottom: 360px; }
       </div>
       <button type="button" class="btn ghost wide" id="btnStuck">Estoy bloqueado: solo 5 minutos</button>
       <div class="notice micro" id="micro" hidden><span id="microTxt"></span></div>
+      <label class="opt" id="tAuto"><input type="checkbox" id="optAuto"><span>Ciclo automático: enfoque, descanso y descanso largo de 15 min cada 4 rondas, sin pulsar nada entre una y otra.</span></label>
 
       <details class="alarms" id="tAlarms" open>
         <summary>Alarmas</summary>
         <label class="row"><input type="checkbox" id="optSound" checked> Sonar al terminar cada sesión</label>
-        <label class="row"><input type="checkbox" id="optNag" checked> Avisarme si dejo el enfoque en pausa más de
+        <label class="row"><input type="checkbox" id="optNag" checked><span class="grow">Avisarme si dejo el enfoque en pausa más de</span>
           <select id="optNagMin" aria-label="Minutos en pausa antes del aviso">
             <option value="1">1 min</option>
             <option value="2">2 min</option>
@@ -325,17 +331,6 @@ body.touring { padding-bottom: 360px; }
           </select>
         </label>
         <div class="row"><button type="button" class="btn small" id="btnTest">Probar sonido</button></div>
-        <div class="ntfy">
-          <label class="row"><input type="checkbox" id="optPush"> Avisarme en el teléfono con ntfy (llega con la app cerrada)</label>
-          <div class="row">
-            <label class="sr-only" for="ntfyTopic">Nombre del canal de ntfy</label>
-            <input type="text" id="ntfyTopic" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="nombre-secreto-del-canal">
-            <button type="button" class="btn small" id="btnTopic">Generar nombre</button>
-          </div>
-          <div class="row"><button type="button" class="btn small" id="btnPushTest">Enviar aviso de prueba</button></div>
-          <p class="hint" id="pushState" role="status"></p>
-          <p class="hint">Instala la app ntfy en tu teléfono y suscríbete al mismo nombre de canal. Quien conozca el nombre puede ver tus avisos, así que usa uno largo y privado.</p>
-        </div>
       </details>
     </section>
 
@@ -404,6 +399,27 @@ body.touring { padding-bottom: 360px; }
     </section>
   </div>
 
+  <section class="card" id="tBackup" aria-labelledby="hBackup">
+    <h2 id="hBackup">Respaldo de datos</h2>
+    <p class="hint" style="max-width:none;margin-top:8px">Tus tareas, racha y metas viven solo en este navegador. Copia un respaldo para guardarlo en tus notas o pasarlo a otro dispositivo.</p>
+    <div class="row">
+      <button type="button" class="btn small" id="btnExport">Copiar respaldo</button>
+      <button type="button" class="btn small" id="btnImportOpen">Importar respaldo</button>
+      <button type="button" class="btn small" id="btnDownload">Descargar archivo</button>
+      <button type="button" class="btn small" id="btnLoadFile">Cargar archivo</button>
+      <input type="file" id="fileIn" accept="application/json,.json" hidden>
+    </div>
+    <div id="importBox" hidden>
+      <label class="sr-only" for="importTxt">Pega aquí tu respaldo</label>
+      <textarea id="importTxt" rows="5" spellcheck="false" placeholder="Pega aquí el respaldo completo" style="margin-top:12px"></textarea>
+      <div class="row">
+        <button type="button" class="btn small primary" id="btnImport">Restaurar</button>
+        <button type="button" class="btn small ghost" id="btnImportCancel">Cancelar</button>
+      </div>
+    </div>
+    <p class="hint" id="backupState" role="status" style="max-width:none;margin-top:10px"></p>
+  </section>
+
 </div>
 
 <div class="tour-hi none" id="tourHi" hidden></div>
@@ -412,6 +428,7 @@ body.touring { padding-bottom: 360px; }
   <h2 id="tourT"></h2>
   <div class="tour-b" id="tourB"></div>
   <p class="tour-try" id="tourTry" hidden></p>
+  <div><button type="button" class="btn small" id="tourDemo" hidden>Ver ejemplo</button></div>
   <div class="tour-nav"><button type="button" class="btn small" id="tourPrev">Atrás</button><button type="button" class="btn small primary" id="tourNext">Siguiente</button></div>
 </section>
 
@@ -419,6 +436,7 @@ body.touring { padding-bottom: 360px; }
   <div class="al-card">
     <h2 id="alTitle"></h2>
     <p id="alText"></p>
+    <div id="alNextSlot"></div>
     <div class="al-btns" id="alBtns"></div>
   </div>
 </div>
@@ -430,6 +448,8 @@ body.touring { padding-bottom: 360px; }
   var C = 2 * Math.PI * 88;
   var FOCUS = [5, 10, 20, 25, 45, 60];
   var BREAK = [5, 10, 15];
+  var LONG_BREAK = 15;
+  var CYCLE = 4;
   var DAYS = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
   var TIPS = [
@@ -475,7 +495,7 @@ body.touring { padding-bottom: 360px; }
         { id: uid(), text: 'Seguir 20 minutos del tutorial oficial «Tu primer juego 2D»', done: false, rounds: 0, example: true },
         { id: uid(), text: 'Hacer que un cuadrado se mueva con las flechas', done: false, rounds: 0, example: true }
       ],
-      settings: { sound: true, nag: true, nagMin: 2, focusMin: 25, breakMin: 5, push: false, topic: '' },
+      settings: { sound: true, nag: true, nagMin: 2, focusMin: 25, breakMin: 5, auto: false },
       days: {},
       current: null
     };
@@ -484,7 +504,11 @@ body.touring { padding-bottom: 360px; }
   try { var raw = localStorage.getItem(KEY); store = raw ? JSON.parse(raw) : null; } catch (e) { store = null; }
   if (!store || !Array.isArray(store.tasks)) store = defaults();
   store.settings = Object.assign(defaults().settings, store.settings || {});
+  delete store.settings.push;
+  delete store.settings.topic;
   store.days = store.days || {};
+  store.cycle = store.cycle || 0;
+  if (store.cycleDay !== keyOf(new Date())) { store.cycle = 0; store.cycleDay = keyOf(new Date()); }
   function weekStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
   var wk = keyOf(weekStart(new Date()));
   store.week = store.week || {};
@@ -531,10 +555,10 @@ body.touring { padding-bottom: 360px; }
     tone(392, 0.32, 0.45, 0.22, 'triangle');
   }
   var alarmTimer = null;
-  function startAlarmSound() {
+  function startAlarmSound(max) {
     stopAlarmSound();
     var n = 0;
-    function go() { alarmSound(); n++; if (n >= 15) stopAlarmSound(); }
+    function go() { alarmSound(); n++; if (n >= (max || 15)) stopAlarmSound(); }
     go();
     alarmTimer = setInterval(go, 2600);
   }
@@ -554,51 +578,6 @@ body.touring { padding-bottom: 360px; }
   }
   function releaseWake() { try { if (wake) wake.release(); } catch (e) {} wake = null; }
 
-  /* ---------- Avisos al teléfono (ntfy) ---------- */
-  var NTFY = 'https://ntfy.sh/';
-  var push = { id: null, topic: null };
-  function topicOk(t) { return /^[A-Za-z0-9_-]{6,60}$/.test(t || ''); }
-  function pushOn() { return !!store.settings.push && topicOk(store.settings.topic); }
-  function setPushState(msg) { $('pushState').textContent = msg; }
-  function mime(text) {
-    var bytes = new TextEncoder().encode(text);
-    var bin = '';
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return '=?UTF-8?B?' + btoa(bin) + '?=';
-  }
-  function pushSend(o) {
-    var h = { 'X-Title': mime(o.title), 'X-Tags': 'alarm_clock', 'X-Priority': '4' };
-    if (o.delay) h['X-Delay'] = o.delay + 's';
-    var url = NTFY + encodeURIComponent(store.settings.topic) + (o.id ? '/' + o.id : '');
-    return fetch(url, { method: 'POST', headers: h, body: o.body });
-  }
-  function pushCancel() {
-    if (!push.id || !push.topic) return;
-    var url = NTFY + encodeURIComponent(push.topic) + '/' + push.id;
-    push.id = null;
-    try { fetch(url, { method: 'DELETE' }).catch(function () {}); } catch (e) {}
-  }
-  function pushSchedule() {
-    pushCancel();
-    if (!pushOn()) return;
-    var secs = Math.round((T.endAt - Date.now()) / 1000);
-    if (secs < 12) return;
-    var id = 'sm' + Math.random().toString(36).slice(2, 12);
-    push.id = id;
-    push.topic = store.settings.topic;
-    var focus = T.mode === 'focus';
-    pushSend({
-      id: id,
-      delay: secs,
-      title: focus ? 'Ronda terminada' : 'Descanso terminado',
-      body: focus ? 'Buen trabajo. Levántate, toma agua y descansa unos minutos.' : 'Se acabó el descanso. Vuelve con una ronda más.'
-    }).then(function (r) {
-      if (!r.ok && id === push.id) setPushState('No se pudo programar el aviso al teléfono (error ' + r.status + ').');
-    }).catch(function () {
-      if (id === push.id) setPushState('Sin conexión: no se pudo programar el aviso al teléfono.');
-    });
-  }
-
   /* ---------- Timer ---------- */
   var T = { mode: 'focus', dur: 25 * 60, remaining: 25 * 60, status: 'idle', endAt: 0, pausedAt: 0, lastNag: 0 };
 
@@ -608,7 +587,6 @@ body.touring { padding-bottom: 360px; }
     T.dur = mins * 60;
     T.remaining = T.dur;
     T.status = 'idle';
-    pushCancel();
     if (!minutes) $('micro').hidden = true;
     hideNag();
     releaseWake();
@@ -622,7 +600,6 @@ body.touring { padding-bottom: 360px; }
     T.status = 'running';
     hideNag();
     takeWake();
-    pushSchedule();
     renderAll();
   }
   function pause() {
@@ -631,7 +608,6 @@ body.touring { padding-bottom: 360px; }
     T.status = 'paused';
     T.pausedAt = Date.now();
     T.lastNag = T.pausedAt;
-    pushCancel();
     releaseWake();
     renderAll();
   }
@@ -648,16 +624,21 @@ body.touring { padding-bottom: 360px; }
       for (var i = 0; i < store.tasks.length; i++) {
         if (store.tasks[i].id === store.current) { store.tasks[i].rounds = (store.tasks[i].rounds || 0) + 1; }
       }
+      store.cycle = (store.cycle || 0) + 1;
+      store.cycleDay = keyOf(new Date());
       save();
     }
     renderAll();
-    openAlarm(wasFocus);
+    var auto = !!store.settings.auto;
+    if (auto) {
+      if (wasFocus) startBreak(); else { prepare('focus'); start(); }
+    }
+    openAlarm(wasFocus, auto);
   }
   function tick() {
     var now = Date.now();
     if (T.status === 'running') {
       T.remaining = Math.max(0, Math.ceil((T.endAt - now) / 1000));
-      if (T.remaining <= 2 && push.id && document.visibilityState === 'visible') pushCancel();
       if (T.remaining <= 0) complete();
     } else if (T.status === 'paused' && T.mode === 'focus' && store.settings.nag) {
       var ms = store.settings.nagMin * 60000;
@@ -677,17 +658,63 @@ body.touring { padding-bottom: 360px; }
   function hideNag() { $('nag').hidden = true; }
 
   /* ---------- Alarm overlay ---------- */
+  var lastNext = null;
+  function nextBreakMin() { return store.cycle > 0 && store.cycle % CYCLE === 0 ? LONG_BREAK : store.settings.breakMin; }
+  function startBreak() {
+    var m = nextBreakMin();
+    prepare('break', m === store.settings.breakMin ? undefined : m);
+    start();
+  }
+  function adoptNext() { if (lastNext) { store.current = lastNext; save(); } }
   function closeAlarm() {
     stopAlarmSound();
+    lastNext = null;
+    var inp = $('alNext');
+    if (!$('alarm').hidden && inp && inp.value.trim()) {
+      var nt = { id: uid(), text: inp.value.trim().slice(0, 120), done: false, rounds: 0 };
+      store.tasks.unshift(nt);
+      lastNext = nt.id;
+      save();
+    }
     $('alarm').hidden = true;
     if (T.status === 'idle' && T.remaining <= 0) T.remaining = T.dur;
     renderAll();
   }
-  function openAlarm(wasFocus) {
+  function openAlarm(wasFocus, auto) {
+    var longBreak = wasFocus && store.cycle > 0 && store.cycle % CYCLE === 0;
     $('alTitle').textContent = wasFocus ? 'Ronda terminada' : 'Descanso terminado';
-    $('alText').textContent = wasFocus
-      ? 'Buen trabajo. Levántate, toma agua y descansa la vista unos minutos.'
-      : 'Se acabó el descanso. Vuelve con una sola ronda más.';
+    var msg;
+    if (auto) {
+      msg = wasFocus
+        ? 'Buen trabajo. El descanso de ' + Math.round(T.dur / 60) + ' min ya empezó.'
+        : 'Se acabó el descanso. Ya empezó la siguiente ronda de enfoque.';
+    } else if (wasFocus) {
+      msg = longBreak
+        ? 'Completaste ' + CYCLE + ' rondas. Toca un descanso largo: levántate, toma agua y descansa la vista.'
+        : 'Buen trabajo. Levántate, toma agua y descansa la vista unos minutos.';
+    } else {
+      msg = 'Se acabó el descanso. Vuelve con una sola ronda más.';
+    }
+    $('alText').textContent = msg;
+    var first;
+    var slot = $('alNextSlot');
+    slot.textContent = '';
+    if (wasFocus) {
+      var wrap = el('div', 'al-next');
+      var lab = el('label', null, 'Siguiente paso (opcional)');
+      lab.setAttribute('for', 'alNext');
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = 'alNext';
+      inp.maxLength = 120;
+      inp.autocomplete = 'off';
+      inp.placeholder = '¿Qué harás después? Algo pequeño';
+      inp.addEventListener('focus', stopAlarmSound);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (first) first.click(); } });
+      wrap.appendChild(lab);
+      wrap.appendChild(inp);
+      slot.appendChild(wrap);
+    }
     var box = $('alBtns');
     box.textContent = '';
     function add(label, cls, fn) {
@@ -697,18 +724,22 @@ body.touring { padding-bottom: 360px; }
       box.appendChild(b);
       return b;
     }
-    var first;
-    if (wasFocus) {
-      first = add('Descansar ' + store.settings.breakMin + ' min', 'primary', function () { prepare('break'); start(); });
-      add('Otra ronda de enfoque', '', function () { prepare('focus'); start(); });
+    if (auto) {
+      first = add('Entendido', 'primary', null);
+      if (wasFocus) add('Saltar el descanso', '', function () { adoptNext(); prepare('focus'); start(); });
+    } else if (wasFocus) {
+      first = add('Descansar ' + nextBreakMin() + ' min', 'primary', startBreak);
+      add('Otra ronda de enfoque', '', function () { adoptNext(); prepare('focus'); start(); });
+      add('Solo silenciar', 'ghost', null);
     } else {
       first = add('Empezar ronda de enfoque', 'primary', function () { prepare('focus'); start(); });
+      add('Solo silenciar', 'ghost', null);
     }
-    add('Solo silenciar', 'ghost', null);
     $('alarm').hidden = false;
-    startAlarmSound();
+    startAlarmSound(auto ? 2 : 15);
     first.focus();
   }
+  function demoAlarm() { openAlarm(true, false); }
 
   /* ---------- Tasks ---------- */
   function currentTask() {
@@ -870,7 +901,15 @@ body.touring { padding-bottom: 360px; }
     $('wkVideos').textContent = w.videos + ' / ' + w.targetVideos;
     $('wkVideosBar').style.width = Math.min(100, (w.videos / w.targetVideos) * 100) + '%';
   }
-  function renderAll() { renderTimer(); renderChips(); renderNow(); renderTasks(); renderStats(); renderWeek(); }
+  function renderCycle() {
+    var c = $('cyc');
+    if (T.mode === 'break') {
+      c.textContent = T.dur === LONG_BREAK * 60 && store.cycle > 0 && store.cycle % CYCLE === 0 ? 'Descanso largo' : 'Descanso corto';
+    } else {
+      c.textContent = 'Ronda ' + ((store.cycle % CYCLE) + 1) + ' de ' + CYCLE;
+    }
+  }
+  function renderAll() { renderTimer(); renderChips(); renderNow(); renderTasks(); renderStats(); renderWeek(); renderCycle(); }
 
   var tipIdx = Math.floor(Date.now() / 86400000) % TIPS.length;
   function renderTip() {
@@ -914,35 +953,11 @@ body.touring { padding-bottom: 360px; }
   $('optSound').checked = !!store.settings.sound;
   $('optNag').checked = !!store.settings.nag;
   $('optNagMin').value = String(store.settings.nagMin);
+  $('optAuto').checked = !!store.settings.auto;
+  $('optAuto').addEventListener('change', function (e) { store.settings.auto = e.target.checked; save(); });
   $('optSound').addEventListener('change', function (e) { store.settings.sound = e.target.checked; save(); });
   $('optNag').addEventListener('change', function (e) { store.settings.nag = e.target.checked; save(); });
   $('optNagMin').addEventListener('change', function (e) { store.settings.nagMin = parseInt(e.target.value, 10) || 2; save(); });
-  $('optPush').checked = !!store.settings.push;
-  $('ntfyTopic').value = store.settings.topic || '';
-  $('optPush').addEventListener('change', function (e) {
-    store.settings.push = e.target.checked;
-    save();
-    if (e.target.checked && !topicOk(store.settings.topic)) setPushState('Escribe un nombre de canal: letras, números, guion o guion bajo, de 6 a 60 caracteres.');
-    else setPushState('');
-    if (T.status === 'running') pushSchedule(); else pushCancel();
-  });
-  $('ntfyTopic').addEventListener('input', function (e) { store.settings.topic = e.target.value.trim(); save(); });
-  $('btnTopic').addEventListener('click', function () {
-    var bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    var hex = Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
-    store.settings.topic = 'sueno-' + hex;
-    $('ntfyTopic').value = store.settings.topic;
-    save();
-    setPushState('Ahora abre la app ntfy en tu teléfono y suscríbete al canal «' + store.settings.topic + '».');
-  });
-  $('btnPushTest').addEventListener('click', function () {
-    if (!topicOk(store.settings.topic)) { setPushState('Primero escribe un nombre de canal válido.'); return; }
-    setPushState('Enviando…');
-    pushSend({ delay: 15, title: 'Aviso de prueba', body: 'Si ves esto, los avisos al teléfono funcionan.' })
-      .then(function (r) { setPushState(r.ok ? 'Programado: te llegará en unos 15 segundos. Prueba cerrando la app.' : 'ntfy respondió con un error (' + r.status + ').'); })
-      .catch(function () { setPushState('Sin conexión con ntfy.'); });
-  });
   $('taskForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var v = $('taskIn').value.trim();
@@ -983,9 +998,114 @@ body.touring { padding-bottom: 360px; }
       renderWeek();
     });
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('alarm').hidden) closeAlarm(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('alarm').hidden) { e.preventDefault(); closeAlarm(); } });
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') { if (T.status === 'running') takeWake(); tick(); }
+  });
+
+  /* ---------- Respaldo ---------- */
+  function backupJson() {
+    var s = JSON.parse(JSON.stringify(store));
+    return JSON.stringify({ app: 'sueno-en-marcha', version: 1, exportedAt: new Date().toISOString(), data: s }, null, 1);
+  }
+  function cleanStr(x, n) { return typeof x === 'string' ? x.slice(0, n) : ''; }
+  function num(x, lo, hi, d) { x = Number(x); return isFinite(x) ? Math.min(hi, Math.max(lo, Math.round(x))) : d; }
+  function syncSettingsUI() {
+    $('optSound').checked = !!store.settings.sound;
+    $('optNag').checked = !!store.settings.nag;
+    $('optNagMin').value = String(store.settings.nagMin);
+    $('optAuto').checked = !!store.settings.auto;
+  }
+  function restoreFromText(text) {
+    var obj;
+    try { obj = JSON.parse(text); } catch (e) {
+      return { ok: false, msg: 'El texto no es un respaldo válido. Copia el respaldo completo, desde la primera llave { hasta la última }.' };
+    }
+    var d = obj && obj.app === 'sueno-en-marcha' && obj.data ? obj.data : null;
+    if (!d || !Array.isArray(d.tasks) || !d.days || typeof d.days !== 'object') {
+      return { ok: false, msg: 'Este texto no parece un respaldo de Sueño en Marcha.' };
+    }
+    var tasks = d.tasks.slice(0, 300).map(function (t) {
+      var x = { id: cleanStr(t && t.id, 20) || uid(), text: cleanStr(t && t.text, 120), done: !!(t && t.done), rounds: num(t && t.rounds, 0, 9999, 0) };
+      if (t && t.kind === 'publish') x.kind = 'publish';
+      if (t && t.example) x.example = true;
+      return x;
+    }).filter(function (t) { return t.text; });
+    var days = {};
+    Object.keys(d.days).slice(0, 800).forEach(function (k) {
+      var v = d.days[k];
+      if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k) && v && typeof v === 'object') {
+        days[k] = { focusSec: num(v.focusSec, 0, 86400, 0), rounds: num(v.rounds, 0, 999, 0), done: num(v.done, 0, 999, 0) };
+      }
+    });
+    var st = d.settings || {};
+    var w = d.week || {};
+    store.tasks = tasks;
+    store.days = days;
+    store.current = tasks.some(function (t) { return t.id === d.current; }) ? d.current : null;
+    store.settings.sound = st.sound !== false;
+    store.settings.nag = st.nag !== false;
+    store.settings.nagMin = [1, 2, 5].indexOf(Number(st.nagMin)) >= 0 ? Number(st.nagMin) : 2;
+    store.settings.focusMin = FOCUS.indexOf(Number(st.focusMin)) >= 0 ? Number(st.focusMin) : 25;
+    store.settings.breakMin = BREAK.indexOf(Number(st.breakMin)) >= 0 ? Number(st.breakMin) : 5;
+    store.settings.auto = !!st.auto;
+    store.week = { key: store.week.key, videos: w.key === store.week.key ? num(w.videos, 0, 99, 0) : 0, targetRounds: num(w.targetRounds, 1, 60, 10), targetVideos: num(w.targetVideos, 1, 10, 1) };
+    store.cycle = d.cycleDay === keyOf(new Date()) ? num(d.cycle, 0, 999, 0) : 0;
+    store.cycleDay = keyOf(new Date());
+    if (typeof d.theme === 'string') applyTheme(d.theme);
+    save();
+    syncSettingsUI();
+    prepare('focus');
+    return { ok: true, msg: 'Listo: se restauraron ' + tasks.length + ' tareas y ' + Object.keys(days).length + ' días de historial.' };
+  }
+  function setBackupState(m) { $('backupState').textContent = m; }
+  var importArmed = null;
+  function disarmImport() {
+    if (importArmed) { clearTimeout(importArmed); importArmed = null; }
+    $('btnImport').textContent = 'Restaurar';
+  }
+  $('btnExport').addEventListener('click', function () {
+    var json = backupJson();
+    function fallback() {
+      $('importBox').hidden = false;
+      $('importTxt').value = json;
+      $('importTxt').focus();
+      $('importTxt').select();
+      setBackupState('No pude copiarlo solo. El respaldo quedó en el cuadro de abajo: cópialo y guárdalo, por ejemplo en tus notas.');
+    }
+    try {
+      navigator.clipboard.writeText(json).then(function () {
+        setBackupState('Respaldo copiado. Pégalo en tus notas o en un mensaje para ti.');
+      }).catch(fallback);
+    } catch (e) { fallback(); }
+  });
+  $('btnImportOpen').addEventListener('click', function () {
+    var b = $('importBox');
+    disarmImport();
+    b.hidden = !b.hidden;
+    $('importTxt').value = '';
+    setBackupState('');
+    if (!b.hidden) $('importTxt').focus();
+  });
+  $('btnImport').addEventListener('click', function () {
+    var txt = $('importTxt').value.trim();
+    if (!txt) { setBackupState('Pega primero el respaldo en el cuadro.'); return; }
+    if (!importArmed) {
+      $('btnImport').textContent = 'Confirmar: reemplazar mis datos';
+      setBackupState('Esto reemplaza tus tareas, racha y metas actuales. Pulsa de nuevo para confirmar.');
+      importArmed = setTimeout(disarmImport, 8000);
+      return;
+    }
+    disarmImport();
+    var r = restoreFromText(txt);
+    setBackupState(r.msg);
+    if (r.ok) { $('importBox').hidden = true; $('importTxt').value = ''; }
+  });
+  $('btnImportCancel').addEventListener('click', function () {
+    disarmImport();
+    $('importBox').hidden = true;
+    $('importTxt').value = '';
+    setBackupState('');
   });
 
   /* ---------- Colores ---------- */
@@ -1034,12 +1154,15 @@ body.touring { padding-bottom: 360px; }
     { id: 'tBtns', t: 'Empezar la ronda', b: ['«Empezar» arranca el temporizador. Mientras corre, el botón pasa a ser «Pausar». «Reiniciar» lo devuelve al tiempo inicial.', 'La pantalla se mantiene encendida mientras corre, si tu dispositivo lo permite.', 'Al llegar a cero suena una alarma que se repite hasta que la silencies, y te pregunta si quieres descansar o hacer otra ronda.'], tr: { sel: '#btnMain', ev: 'click', msg: 'Pruébalo: pulsa «Empezar» y mira cómo corre el reloj.' } },
     { id: 'tBtns', t: 'Pausar y retomar', b: ['Pulsa «Pausar» para detenerlo sin perder el tiempo restante. Después el botón dice «Retomar».', 'Si dejas el enfoque en pausa demasiado tiempo, la app te avisa con un sonido y un mensaje para que vuelvas. Ese tiempo se configura en «Alarmas».'], tr: { sel: '#btnMain', ev: 'click', msg: 'Pruébalo: pulsa el botón principal otra vez.' } },
     { id: 'btnStuck', t: 'Estoy bloqueado', b: ['Es para los días en que no te puedes ni sentar. Inicia una ronda de solo 5 minutos con una micro-acción concreta, por ejemplo «abre Godot, solo eso».', 'Si completas los 5 minutos, cuenta como una ronda normal. No hace falta probarlo ahora.'] },
-    { id: 'tAlarms', t: 'Alarmas', b: ['Sonar al terminar: activa o desactiva el sonido de fin de ronda.', 'Avisarme si dejo el enfoque en pausa: elige si el aviso llega tras 1, 2 o 5 minutos.', '«Probar sonido» comprueba el volumen. Los navegadores solo dejan sonar audio después de que interactúas con la página.', 'Más abajo puedes activar los avisos al teléfono con ntfy: llegan aunque la app esté cerrada. Hay que instalar la app ntfy y usar el mismo nombre de canal.'], tr: { sel: '#btnTest', ev: 'click', msg: 'Pruébalo: pulsa «Probar sonido».' } },
+    { id: 'tAuto', t: 'Ciclo automático', b: ['Al activarlo, la app encadena sola el enfoque y el descanso: cuando termina una ronda empieza el descanso, y cuando termina el descanso empieza la siguiente ronda.', 'Cada 4 rondas el descanso es largo, de 15 minutos. Bajo el reloj ves en qué ronda del ciclo vas, por ejemplo «Ronda 2 de 4». El conteo se reinicia cada día.', 'Suena una alarma corta y aparece un aviso, pero no tienes que pulsar nada para seguir. Funciona mientras la app está abierta.'], tr: { sel: '#optAuto', ev: 'click', msg: 'Pruébalo: marca o desmarca la casilla. Al terminar el tutorial vuelve a como estaba.' } },
+    { t: 'Siguiente paso', demo: demoAlarm, b: ['Cuando termina una ronda aparece un cuadro con la alarma. Ahí puedes escribir el siguiente paso, la próxima cosa pequeña que harás, y se añade al principio de tu lista.', 'Así no empiezas de cero después del descanso y no tienes que decidir en frío. Si eliges «Otra ronda de enfoque», ese paso queda como tu tarea en curso.', 'Es opcional: puedes dejarlo vacío.'], tr: { sel: '#tourDemo', ev: 'click', msg: 'Pruébalo: pulsa «Ver ejemplo». Si escribes un paso, se añade a tu lista y lo puedes quitar con la ×.' } },
+    { id: 'tAlarms', t: 'Alarmas', b: ['Sonar al terminar: activa o desactiva el sonido de fin de ronda.', 'Avisarme si dejo el enfoque en pausa: elige si el aviso llega tras 1, 2 o 5 minutos.', '«Probar sonido» comprueba el volumen. Los navegadores solo dejan sonar audio después de que interactúas con la página.'], tr: { sel: '#btnTest', ev: 'click', msg: 'Pruébalo: pulsa «Probar sonido».' } },
     { id: 'tTasks', t: 'Misiones de hoy', b: ['Escribe la tarea más pequeña posible y pulsa «Añadir».', '«Empezar» en una tarea la vincula al temporizador y arranca una ronda; esa tarea cuenta sus rondas.', 'La casilla la marca como hecha y la barra de arriba muestra tu avance. La × la quita, y «Quitar las hechas» limpia las completadas. Las tareas marcadas «ejemplo» puedes borrarlas.'], tr: { sel: '#taskForm', ev: 'submit', msg: 'Pruébalo: escribe una tarea y pulsa «Añadir». Se queda en tu lista; puedes quitarla con la ×.' } },
     { id: 'tDev', t: 'Ciclo de video', b: ['Escribe el nombre de tu video (opcional) y pulsa «Añadir pasos»: se agregan 5 tareas a tu lista: idea, grabar, editar, título y miniatura, y subir.', 'Al marcar «Subir y publicar» como hecha, la app suma un video a tus metas de la semana.', 'No lo pruebes ahora si no quieres llenar la lista.'] },
     { id: 'tWeek', t: 'Metas de la semana', b: ['La semana va de lunes a domingo y se reinicia sola.', 'Rondas de enfoque: suma las rondas completadas esta semana. Los botones − y + ajustan tu meta.', 'Videos publicados: suben cuando marcas «Subir y publicar» o con «Publiqué un video». «Deshacer» resta uno.'] },
     { id: 'tStreak', t: 'Racha', b: ['Cada cuadro es un día de los últimos 14. Verde significa que ese día completaste una ronda o una tarea. Hoy tiene un borde.', 'La idea es no romper la cadena: con una sola ronda corta ya cuenta.'] },
     { id: 'tTip', t: 'Tips del momento', b: ['Muestra un consejo contra la procrastinación y cambia solo cada 45 segundos.', '«Otro tip» salta al siguiente y reinicia el contador.'], tr: { sel: '#btnTip', ev: 'click', msg: 'Pruébalo: pulsa «Otro tip».' } },
+    { id: 'tBackup', t: 'Respaldo de datos', b: ['Tus tareas, racha y metas se guardan solo en este navegador. Si lo borras o cambias de dispositivo, se pierden.', '«Copiar respaldo» copia todo en forma de texto: guárdalo en tus notas. «Importar respaldo» te deja pegarlo para restaurarlo; antes de reemplazar tus datos te pide confirmar.'], tr: { sel: '#btnExport', ev: 'click', msg: 'Pruébalo: pulsa «Copiar respaldo».' } },
     { t: 'Listo', b: ['Un buen primer paso: elige 5 o 10 minutos, añade una tarea pequeña y pulsa Empezar.', 'Puedes repetir este tutorial cuando quieras con el botón «Tutorial» de arriba.'] }
   ];
   var tour = { on: false, i: 0, done: {}, wasIdle: true, fm: 25, bm: 5 };
@@ -1090,6 +1213,7 @@ body.touring { padding-bottom: 360px; }
     b.textContent = '';
     s.b.forEach(function (x) { b.appendChild(el('p', null, x)); });
     updateTry();
+    $('tourDemo').hidden = !s.demo;
     $('tourPrev').disabled = tour.i === 0;
     $('tourNext').textContent = tour.i === STEPS.length - 1 ? 'Terminar' : 'Siguiente';
     $('tourHi').className = 'tour-hi' + (stepEl(s) ? '' : ' none');
@@ -1108,6 +1232,7 @@ body.touring { padding-bottom: 360px; }
     tour.done = {};
     tour.wasIdle = T.status === 'idle';
     tour.fm = store.settings.focusMin;
+    tour.auto = store.settings.auto;
     tour.bm = store.settings.breakMin;
     $('tour').hidden = false;
     $('tourHi').hidden = false;
@@ -1122,6 +1247,8 @@ body.touring { padding-bottom: 360px; }
     document.body.classList.remove('touring');
     if (tour.wasIdle) {
       store.settings.focusMin = tour.fm;
+      store.settings.auto = tour.auto;
+      $('optAuto').checked = !!tour.auto;
       store.settings.breakMin = tour.bm;
       prepare('focus');
     }
@@ -1149,8 +1276,9 @@ body.touring { padding-bottom: 360px; }
   $('tourNext').addEventListener('click', function () { tourGo(tour.i + 1); });
   $('tourPrev').addEventListener('click', function () { tourGo(tour.i - 1); });
   $('tourX').addEventListener('click', tourEnd);
+  $('tourDemo').addEventListener('click', function () { var s = STEPS[tour.i]; if (s && s.demo) s.demo(); });
   document.addEventListener('keydown', function (e) {
-    if (!tour.on || !$('alarm').hidden) return;
+    if (!tour.on || !$('alarm').hidden || e.defaultPrevented) return;
     var tag = e.target && e.target.tagName;
     if (e.key === 'Escape') { tourEnd(); return; }
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
@@ -1158,6 +1286,31 @@ body.touring { padding-bottom: 360px; }
     if (e.key === 'ArrowLeft') tourGo(tour.i - 1);
   });
   if (!store.tour) $('btnTour').classList.add('primary');
+
+  $('btnDownload').addEventListener('click', function () {
+    var blob = new Blob([backupJson()], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sueno-en-marcha-respaldo-' + keyOf(new Date()) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    setBackupState('Archivo de respaldo descargado.');
+  });
+  $('btnLoadFile').addEventListener('click', function () { $('fileIn').click(); });
+  $('fileIn').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      $('importBox').hidden = false;
+      $('importTxt').value = String(r.result || '');
+      setBackupState('Archivo cargado. Pulsa «Restaurar» para reemplazar tus datos.');
+      e.target.value = '';
+    };
+    r.readAsText(f);
+  });
 
   /* ---------- Start ---------- */
   renderThemes();
