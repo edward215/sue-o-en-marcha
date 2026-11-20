@@ -1,6 +1,6 @@
 // Service worker de Sueño en Marcha: guarda la app para que abra sin conexión.
 // Si cambias archivos de la app, sube el número de versión para que los teléfonos descarguen lo nuevo.
-const CACHE = 'sueno-en-marcha-v4';
+const CACHE = 'sueno-en-marcha-v5';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

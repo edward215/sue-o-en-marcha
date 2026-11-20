@@ -25,7 +25,9 @@ Temporizador de enfoque, lista de tareas, racha diaria y tips contra la procrast
 
 - **Temporizador de enfoque y descanso**, con alarma al terminar cada sesión y aviso si dejas el enfoque en pausa demasiado tiempo.
 - **Ciclo automático:** si lo activas, la app encadena sola enfoque y descanso, con un descanso largo de 15 minutos cada 4 rondas. Bajo el reloj ves en qué ronda vas.
-- **Siguiente paso:** al terminar una ronda puedes escribir qué harás después. Se añade al inicio de tu lista, y si eliges «Otra ronda de enfoque» queda como tu tarea en curso.
+- **Nota y siguiente paso:** al terminar una ronda puedes anotar qué lograste y escribir qué harás después. El siguiente paso se añade al inicio de tu lista, y si eliges «Otra ronda de enfoque» queda como tu tarea en curso.
+- **Estadísticas:** gráfico con los minutos de enfoque de los últimos 7 días, tu mejor racha, el enfoque total, las rondas totales y tu mejor hora (se calcula desde tu tercera ronda).
+- **Resumen de la semana:** rondas, minutos, tareas hechas y las notas de cada ronda, de lunes a domingo. «Copiar resumen» lo deja listo para pegar en tu devlog o tus notas.
 - **Tareas, ciclo de video, metas de la semana y racha diaria.**
 - **Respaldo de datos:** copia tus datos como texto (o descárgalos como archivo `.json`) y restáuralos cuando quieras, en este u otro dispositivo.
 - **Colores:** 8 colores para la interfaz.
@@ -37,7 +39,7 @@ La alarma suena mientras la app está abierta. Mientras el temporizador corre, l
 
 ## Actualizar la app
 
-Si cambias `index.html` u otro archivo, abre `sw.js` y sube el número de `CACHE` (por ejemplo de `v3` a `v4`). Así los teléfonos descargan la versión nueva.
+Si cambias `index.html` u otro archivo, abre `sw.js` y sube el número de `CACHE` (por ejemplo de `v5` a `v6`). Así los teléfonos descargan la versión nueva.
 
 ## Datos
 

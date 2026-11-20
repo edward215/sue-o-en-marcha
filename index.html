@@ -219,6 +219,24 @@ input[type="checkbox"] { accent-color: var(--accent); width: 18px; height: 18px;
 .opt { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; color: var(--muted); cursor: pointer; }
 .opt input { margin-top: 2px; }
 .grow { flex: 1 1 160px; min-width: 0; }
+.chart { width: 100%; height: auto; display: block; margin-top: 10px; }
+.ch-grid { stroke: var(--line); stroke-width: 1; }
+.ch-bar { fill: var(--accent); }
+.ch-bar.past { opacity: 0.55; }
+.ch-t { fill: var(--muted); font: 11px var(--font-mono); }
+.ch-t.now { fill: var(--fg); font-weight: 700; }
+.ch-v { fill: var(--fg); font: 600 11px var(--font-mono); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin-top: 16px; }
+.tile-v { font: 700 20px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tile-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+.sum-top { display: flex; flex-wrap: wrap; gap: 14px 26px; margin-top: 14px; }
+.sum-list { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 8px; }
+.sum-list li { display: grid; grid-template-columns: 3.6em minmax(0, 1fr); gap: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.sum-list li.empty { display: block; border-top: 0; padding-top: 0; }
+.sum-d { font: 500 12px var(--font-mono); color: var(--muted); text-transform: uppercase; }
+.sum-note { overflow-wrap: anywhere; }
+.sum-meta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.al-card { max-height: calc(100dvh - 32px); overflow-y: auto; }
 .al-next { display: grid; gap: 6px; margin-top: 16px; }
 .al-next label { font-size: 13px; color: var(--muted); }
 .al-next input { min-height: 44px; width: 100%; }
@@ -385,6 +403,24 @@ body.touring { padding-bottom: 360px; }
     </section>
   </div>
 
+  <div class="grid">
+    <section class="card" id="tStats" aria-labelledby="hStats">
+      <h2 id="hStats">Estadísticas</h2>
+      <p class="hint" style="max-width:none;margin-top:8px">Minutos de enfoque de los últimos 7 días.</p>
+      <svg id="chart" class="chart" role="img" aria-label="Minutos de enfoque de los últimos 7 días"></svg>
+      <p class="hint" id="chartEmpty" style="max-width:none" hidden>Todavía no hay rondas. Completa una y aparecerá aquí.</p>
+      <div class="tiles" id="tiles"></div>
+    </section>
+    <section class="card" id="tSummary" aria-labelledby="hSum">
+      <div class="card-h"><h2 id="hSum">Resumen de la semana</h2><span class="count" id="sumRange"></span></div>
+      <div class="sum-top" id="sumTop"></div>
+      <ul class="sum-list" id="sumList"></ul>
+      <div class="row"><button type="button" class="btn small" id="btnSum">Copiar resumen</button></div>
+      <textarea id="sumTxt" rows="7" readonly hidden style="margin-top:12px"></textarea>
+      <p class="hint" id="sumState" role="status" style="max-width:none;margin-top:10px"></p>
+    </section>
+  </div>
+
   <div class="grid2">
     <section class="card" id="tStreak" aria-labelledby="hStreak">
       <h2 id="hStreak">Racha</h2>
@@ -509,6 +545,7 @@ body.touring { padding-bottom: 360px; }
   store.days = store.days || {};
   store.cycle = store.cycle || 0;
   if (store.cycleDay !== keyOf(new Date())) { store.cycle = 0; store.cycleDay = keyOf(new Date()); }
+  store.log = Array.isArray(store.log) ? store.log : [];
   function weekStart(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
   var wk = keyOf(weekStart(new Date()));
   store.week = store.week || {};
@@ -624,6 +661,10 @@ body.touring { padding-bottom: 360px; }
       for (var i = 0; i < store.tasks.length; i++) {
         if (store.tasks[i].id === store.current) { store.tasks[i].rounds = (store.tasks[i].rounds || 0) + 1; }
       }
+      var ct = currentTask();
+      pendingLog = { ts: Date.now(), min: Math.round(T.dur / 60), task: ct ? ct.text.slice(0, 120) : '', note: '' };
+      store.log.push(pendingLog);
+      if (store.log.length > 500) store.log.splice(0, store.log.length - 500);
       store.cycle = (store.cycle || 0) + 1;
       store.cycleDay = keyOf(new Date());
       save();
@@ -659,6 +700,7 @@ body.touring { padding-bottom: 360px; }
 
   /* ---------- Alarm overlay ---------- */
   var lastNext = null;
+  var pendingLog = null;
   function nextBreakMin() { return store.cycle > 0 && store.cycle % CYCLE === 0 ? LONG_BREAK : store.settings.breakMin; }
   function startBreak() {
     var m = nextBreakMin();
@@ -669,6 +711,9 @@ body.touring { padding-bottom: 360px; }
   function closeAlarm() {
     stopAlarmSound();
     lastNext = null;
+    var nin = $('alNote');
+    if (!$('alarm').hidden && pendingLog && nin && nin.value.trim()) { pendingLog.note = nin.value.trim().slice(0, 140); save(); }
+    pendingLog = null;
     var inp = $('alNext');
     if (!$('alarm').hidden && inp && inp.value.trim()) {
       var nt = { id: uid(), text: inp.value.trim().slice(0, 120), done: false, rounds: 0 };
@@ -700,6 +745,20 @@ body.touring { padding-bottom: 360px; }
     var slot = $('alNextSlot');
     slot.textContent = '';
     if (wasFocus) {
+      var nwrap = el('div', 'al-next');
+      var nlab = el('label', null, '¿Qué lograste en esta ronda? (opcional)');
+      nlab.setAttribute('for', 'alNote');
+      var ninp = document.createElement('input');
+      ninp.type = 'text';
+      ninp.id = 'alNote';
+      ninp.maxLength = 140;
+      ninp.autocomplete = 'off';
+      ninp.placeholder = 'Ej: terminé la introducción';
+      ninp.addEventListener('focus', stopAlarmSound);
+      ninp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var nx = $('alNext'); if (nx) nx.focus(); } });
+      nwrap.appendChild(nlab);
+      nwrap.appendChild(ninp);
+      slot.appendChild(nwrap);
       var wrap = el('div', 'al-next');
       var lab = el('label', null, 'Siguiente paso (opcional)');
       lab.setAttribute('for', 'alNext');
@@ -909,7 +968,7 @@ body.touring { padding-bottom: 360px; }
       c.textContent = 'Ronda ' + ((store.cycle % CYCLE) + 1) + ' de ' + CYCLE;
     }
   }
-  function renderAll() { renderTimer(); renderChips(); renderNow(); renderTasks(); renderStats(); renderWeek(); renderCycle(); }
+  function renderAll() { renderTimer(); renderChips(); renderNow(); renderTasks(); renderStats(); renderWeek(); renderCycle(); renderInsights(); }
 
   var tipIdx = Math.floor(Date.now() / 86400000) % TIPS.length;
   function renderTip() {
@@ -1003,6 +1062,168 @@ body.touring { padding-bottom: 360px; }
     if (document.visibilityState === 'visible') { if (T.status === 'running') takeWake(); tick(); }
   });
 
+  /* ---------- Estadísticas y resumen ---------- */
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var DIAS3 = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  function fmtMin(m) { return m >= 120 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min'; }
+  function svgEl(tag, attrs, text) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function bestStreak() {
+    var keys = Object.keys(store.days).filter(isActive).sort();
+    var best = 0, run = 0, prev = null;
+    keys.forEach(function (k) {
+      var p = k.split('-');
+      var t = Date.UTC(+p[0], +p[1] - 1, +p[2]);
+      run = prev !== null && t - prev === 86400000 ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = t;
+    });
+    return best;
+  }
+  function bestHour() {
+    if (store.log.length < 3) return null;
+    var h = [];
+    for (var i = 0; i < 24; i++) h.push(0);
+    store.log.forEach(function (x) { h[new Date(x.ts).getHours()] += x.min; });
+    var bi = 0;
+    for (var j = 1; j < 24; j++) if (h[j] > h[bi]) bi = j;
+    return h[bi] > 0 ? bi : null;
+  }
+  function renderChart() {
+    var svg = $('chart');
+    svg.textContent = '';
+    var W = 360, H = 176, L = 30, R = 6, TOP = 20, B = 28;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var vals = [], labels = [], total = 0;
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date();
+      d.setDate(d.getDate() - i);
+      var r = store.days[keyOf(d)];
+      var m = r ? Math.round(r.focusSec / 60) : 0;
+      vals.push(m);
+      labels.push(DAYS[d.getDay()]);
+      total += m;
+    }
+    var max = Math.max.apply(null, vals);
+    var top = Math.max(30, Math.ceil(max / 30) * 30);
+    var ph = H - TOP - B, pw = W - L - R, slot = pw / 7, bw = Math.min(30, slot - 12);
+    [0, top / 2, top].forEach(function (g) {
+      var y = TOP + ph - (g / top) * ph;
+      svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: y, y2: y, 'class': 'ch-grid' }));
+      svg.appendChild(svgEl('text', { x: L - 6, y: y + 4, 'text-anchor': 'end', 'class': 'ch-t' }, String(g)));
+    });
+    vals.forEach(function (v, j) {
+      var x = L + slot * j + (slot - bw) / 2;
+      var h = (v / top) * ph;
+      var isToday = j === 6;
+      if (v > 0) {
+        svg.appendChild(svgEl('rect', { x: x, y: TOP + ph - h, width: bw, height: h, rx: 4, 'class': 'ch-bar' + (isToday ? '' : ' past') }));
+        svg.appendChild(svgEl('text', { x: x + bw / 2, y: TOP + ph - h - 5, 'text-anchor': 'middle', 'class': 'ch-v' }, String(v)));
+      }
+      svg.appendChild(svgEl('text', { x: x + bw / 2, y: H - 8, 'text-anchor': 'middle', 'class': 'ch-t' + (isToday ? ' now' : '') }, labels[j]));
+    });
+    svg.setAttribute('aria-label', 'Minutos de enfoque de los últimos 7 días: ' + vals.join(', ') + '. Total ' + total + ' minutos.');
+    $('chartEmpty').hidden = total > 0;
+  }
+  function renderTiles() {
+    var tot = 0, rounds = 0;
+    Object.keys(store.days).forEach(function (k) { tot += store.days[k].focusSec || 0; rounds += store.days[k].rounds || 0; });
+    var bh = bestHour();
+    var bs = bestStreak();
+    var items = [
+      [bs + (bs === 1 ? ' día' : ' días'), 'Mejor racha'],
+      [fmtMin(Math.round(tot / 60)), 'Enfoque total'],
+      [String(rounds), 'Rondas totales'],
+      [bh === null ? '—' : pad(bh) + ':00–' + pad((bh + 1) % 24) + ':00', bh === null ? 'Tu mejor hora (desde 3 rondas)' : 'Tu mejor hora']
+    ];
+    var box = $('tiles');
+    box.textContent = '';
+    items.forEach(function (x) {
+      var t = el('div');
+      t.appendChild(el('div', 'tile-v', x[0]));
+      t.appendChild(el('div', 'tile-l', x[1]));
+      box.appendChild(t);
+    });
+  }
+  function weekInfo() {
+    var s = weekStart(new Date());
+    var e = new Date(s);
+    e.setDate(s.getDate() + 6);
+    var e2 = new Date(s);
+    e2.setDate(s.getDate() + 7);
+    var rounds = 0, sec = 0, done = 0;
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(s);
+      d.setDate(s.getDate() + i);
+      var r = store.days[keyOf(d)];
+      if (r) { rounds += r.rounds; sec += r.focusSec; done += r.done; }
+    }
+    var t0 = s.getTime(), t1 = e2.getTime();
+    var notes = store.log.filter(function (x) { return x.ts >= t0 && x.ts < t1 && x.note; }).sort(function (a, b) { return b.ts - a.ts; });
+    var range = s.getDate() + (s.getMonth() === e.getMonth() ? '' : ' ' + MESES[s.getMonth()]) + '–' + e.getDate() + ' ' + MESES[e.getMonth()];
+    return { rounds: rounds, min: Math.round(sec / 60), done: done, notes: notes, range: range };
+  }
+  function summaryText() {
+    var w = weekInfo();
+    var lines = ['Resumen de la semana (' + w.range + ')', 'Rondas de enfoque: ' + w.rounds + ' · Minutos: ' + w.min + ' · Tareas hechas: ' + w.done];
+    if (w.notes.length) {
+      lines.push('Lo que avancé:');
+      w.notes.slice().reverse().forEach(function (x) {
+        var d = new Date(x.ts);
+        lines.push('- ' + DIAS3[d.getDay()] + ' ' + d.getDate() + ': ' + x.note + ' (' + (x.task ? x.task + ', ' : '') + x.min + ' min)');
+      });
+    }
+    return lines.join('\n');
+  }
+  function renderSummary() {
+    var w = weekInfo();
+    $('sumRange').textContent = w.range;
+    var top = $('sumTop');
+    top.textContent = '';
+    [[w.rounds, w.rounds === 1 ? 'ronda' : 'rondas'], [fmtMin(w.min), 'de enfoque'], [w.done, w.done === 1 ? 'tarea hecha' : 'tareas hechas']].forEach(function (x) {
+      var b = el('div', 'stat');
+      b.appendChild(el('span', 'stat-n', String(x[0])));
+      b.appendChild(el('span', 'stat-l', x[1]));
+      top.appendChild(b);
+    });
+    var ul = $('sumList');
+    ul.textContent = '';
+    if (!w.notes.length) ul.appendChild(el('li', 'empty', 'Todavía no hay notas esta semana. Escribe qué lograste al terminar una ronda y aparecerá aquí.'));
+    w.notes.slice(0, 8).forEach(function (x) {
+      var d = new Date(x.ts);
+      var li = el('li');
+      li.appendChild(el('span', 'sum-d', DIAS3[d.getDay()] + ' ' + d.getDate()));
+      var box = el('div', 'sum-note');
+      box.appendChild(document.createTextNode(x.note));
+      box.appendChild(el('span', 'sum-meta', (x.task ? x.task + ' · ' : '') + x.min + ' min'));
+      li.appendChild(box);
+      ul.appendChild(li);
+    });
+    if (w.notes.length > 8) ul.appendChild(el('li', 'empty', '+' + (w.notes.length - 8) + ' notas más en el resumen copiado.'));
+  }
+  function renderInsights() { renderChart(); renderTiles(); renderSummary(); }
+  $('btnSum').addEventListener('click', function () {
+    var text = summaryText();
+    function fb() {
+      var t = $('sumTxt');
+      t.hidden = false;
+      t.value = text;
+      t.focus();
+      t.select();
+      $('sumState').textContent = 'No pude copiarlo solo. Selecciona el texto de arriba y cópialo.';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        $('sumTxt').hidden = true;
+        $('sumState').textContent = 'Resumen copiado. Pégalo en tus notas, tu devlog o un mensaje.';
+      }).catch(fb);
+    } catch (e) { fb(); }
+  });
+
   /* ---------- Respaldo ---------- */
   function backupJson() {
     var s = JSON.parse(JSON.stringify(store));
@@ -1052,6 +1273,9 @@ body.touring { padding-bottom: 360px; }
     store.week = { key: store.week.key, videos: w.key === store.week.key ? num(w.videos, 0, 99, 0) : 0, targetRounds: num(w.targetRounds, 1, 60, 10), targetVideos: num(w.targetVideos, 1, 10, 1) };
     store.cycle = d.cycleDay === keyOf(new Date()) ? num(d.cycle, 0, 999, 0) : 0;
     store.cycleDay = keyOf(new Date());
+    store.log = Array.isArray(d.log) ? d.log.slice(-500).map(function (x) {
+      return { ts: num(x && x.ts, 0, 9e15, 0), min: num(x && x.min, 0, 600, 0), task: cleanStr(x && x.task, 120), note: cleanStr(x && x.note, 140) };
+    }).filter(function (x) { return x.ts > 0; }) : [];
     if (typeof d.theme === 'string') applyTheme(d.theme);
     save();
     syncSettingsUI();
@@ -1155,11 +1379,13 @@ body.touring { padding-bottom: 360px; }
     { id: 'tBtns', t: 'Pausar y retomar', b: ['Pulsa «Pausar» para detenerlo sin perder el tiempo restante. Después el botón dice «Retomar».', 'Si dejas el enfoque en pausa demasiado tiempo, la app te avisa con un sonido y un mensaje para que vuelvas. Ese tiempo se configura en «Alarmas».'], tr: { sel: '#btnMain', ev: 'click', msg: 'Pruébalo: pulsa el botón principal otra vez.' } },
     { id: 'btnStuck', t: 'Estoy bloqueado', b: ['Es para los días en que no te puedes ni sentar. Inicia una ronda de solo 5 minutos con una micro-acción concreta, por ejemplo «abre Godot, solo eso».', 'Si completas los 5 minutos, cuenta como una ronda normal. No hace falta probarlo ahora.'] },
     { id: 'tAuto', t: 'Ciclo automático', b: ['Al activarlo, la app encadena sola el enfoque y el descanso: cuando termina una ronda empieza el descanso, y cuando termina el descanso empieza la siguiente ronda.', 'Cada 4 rondas el descanso es largo, de 15 minutos. Bajo el reloj ves en qué ronda del ciclo vas, por ejemplo «Ronda 2 de 4». El conteo se reinicia cada día.', 'Suena una alarma corta y aparece un aviso, pero no tienes que pulsar nada para seguir. Funciona mientras la app está abierta.'], tr: { sel: '#optAuto', ev: 'click', msg: 'Pruébalo: marca o desmarca la casilla. Al terminar el tutorial vuelve a como estaba.' } },
-    { t: 'Siguiente paso', demo: demoAlarm, b: ['Cuando termina una ronda aparece un cuadro con la alarma. Ahí puedes escribir el siguiente paso, la próxima cosa pequeña que harás, y se añade al principio de tu lista.', 'Así no empiezas de cero después del descanso y no tienes que decidir en frío. Si eliges «Otra ronda de enfoque», ese paso queda como tu tarea en curso.', 'Es opcional: puedes dejarlo vacío.'], tr: { sel: '#tourDemo', ev: 'click', msg: 'Pruébalo: pulsa «Ver ejemplo». Si escribes un paso, se añade a tu lista y lo puedes quitar con la ×.' } },
+    { t: 'Siguiente paso', demo: demoAlarm, b: ['Cuando termina una ronda aparece un cuadro con la alarma. Ahí puedes anotar qué lograste y escribir el siguiente paso, la próxima cosa pequeña que harás. El siguiente paso se añade al principio de tu lista.', 'Así no empiezas de cero después del descanso y no tienes que decidir en frío. Si eliges «Otra ronda de enfoque», ese paso queda como tu tarea en curso.', 'Lo que anotes de cada ronda alimenta el resumen de la semana, útil para tu devlog o para repasar tu progreso.', 'Las dos cosas son opcionales: puedes dejarlas vacías.'], tr: { sel: '#tourDemo', ev: 'click', msg: 'Pruébalo: pulsa «Ver ejemplo». Si escribes un paso, se añade a tu lista y lo puedes quitar con la ×.' } },
     { id: 'tAlarms', t: 'Alarmas', b: ['Sonar al terminar: activa o desactiva el sonido de fin de ronda.', 'Avisarme si dejo el enfoque en pausa: elige si el aviso llega tras 1, 2 o 5 minutos.', '«Probar sonido» comprueba el volumen. Los navegadores solo dejan sonar audio después de que interactúas con la página.'], tr: { sel: '#btnTest', ev: 'click', msg: 'Pruébalo: pulsa «Probar sonido».' } },
     { id: 'tTasks', t: 'Misiones de hoy', b: ['Escribe la tarea más pequeña posible y pulsa «Añadir».', '«Empezar» en una tarea la vincula al temporizador y arranca una ronda; esa tarea cuenta sus rondas.', 'La casilla la marca como hecha y la barra de arriba muestra tu avance. La × la quita, y «Quitar las hechas» limpia las completadas. Las tareas marcadas «ejemplo» puedes borrarlas.'], tr: { sel: '#taskForm', ev: 'submit', msg: 'Pruébalo: escribe una tarea y pulsa «Añadir». Se queda en tu lista; puedes quitarla con la ×.' } },
     { id: 'tDev', t: 'Ciclo de video', b: ['Escribe el nombre de tu video (opcional) y pulsa «Añadir pasos»: se agregan 5 tareas a tu lista: idea, grabar, editar, título y miniatura, y subir.', 'Al marcar «Subir y publicar» como hecha, la app suma un video a tus metas de la semana.', 'No lo pruebes ahora si no quieres llenar la lista.'] },
     { id: 'tWeek', t: 'Metas de la semana', b: ['La semana va de lunes a domingo y se reinicia sola.', 'Rondas de enfoque: suma las rondas completadas esta semana. Los botones − y + ajustan tu meta.', 'Videos publicados: suben cuando marcas «Subir y publicar» o con «Publiqué un video». «Deshacer» resta uno.'] },
+    { id: 'tStats', t: 'Estadísticas', b: ['El gráfico muestra los minutos de enfoque de cada uno de los últimos 7 días. La barra más intensa es la de hoy.', 'Debajo ves tu mejor racha, el tiempo total de enfoque, las rondas totales y tu mejor hora. La mejor hora se calcula con tus rondas, a partir de la tercera.'] },
+    { id: 'tSummary', t: 'Resumen de la semana', b: ['Reúne las rondas, los minutos y las tareas hechas de esta semana, de lunes a domingo, junto con las notas que escribiste al terminar cada ronda.', '«Copiar resumen» lo convierte en texto listo para pegar en tu devlog, tus notas o un mensaje.'], tr: { sel: '#btnSum', ev: 'click', msg: 'Pruébalo: pulsa «Copiar resumen».' } },
     { id: 'tStreak', t: 'Racha', b: ['Cada cuadro es un día de los últimos 14. Verde significa que ese día completaste una ronda o una tarea. Hoy tiene un borde.', 'La idea es no romper la cadena: con una sola ronda corta ya cuenta.'] },
     { id: 'tTip', t: 'Tips del momento', b: ['Muestra un consejo contra la procrastinación y cambia solo cada 45 segundos.', '«Otro tip» salta al siguiente y reinicia el contador.'], tr: { sel: '#btnTip', ev: 'click', msg: 'Pruébalo: pulsa «Otro tip».' } },
     { id: 'tBackup', t: 'Respaldo de datos', b: ['Tus tareas, racha y metas se guardan solo en este navegador. Si lo borras o cambias de dispositivo, se pierden.', '«Copiar respaldo» copia todo en forma de texto: guárdalo en tus notas. «Importar respaldo» te deja pegarlo para restaurarlo; antes de reemplazar tus datos te pide confirmar.'], tr: { sel: '#btnExport', ev: 'click', msg: 'Pruébalo: pulsa «Copiar respaldo».' } },
